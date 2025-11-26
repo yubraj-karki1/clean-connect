@@ -1,3 +1,4 @@
+import 'package:cleanconnect/Screens/forgot_screen.dart';
 import 'package:cleanconnect/Screens/home_screen.dart';
 import 'package:cleanconnect/Screens/login_screen.dart';
 import 'package:cleanconnect/Screens/signup_screen.dart';
@@ -12,7 +13,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginScreen());
+      home: ForgotScreen());
     
   }
 }
