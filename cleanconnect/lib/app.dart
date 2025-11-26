@@ -4,6 +4,7 @@ import 'package:cleanconnect/Screens/login_screen.dart';
 import 'package:cleanconnect/Screens/signup_screen.dart';
 import 'package:cleanconnect/Screens/splash_screen1.dart';
 import 'package:cleanconnect/Screens/splash_screen2.dart';
+import 'package:cleanconnect/Screens/verification_screen.dart';
 import 'package:flutter/material.dart';
 
 class App extends StatelessWidget {
@@ -13,7 +14,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: ForgotScreen());
+      home: VerificationScreen());
     
   }
 }
