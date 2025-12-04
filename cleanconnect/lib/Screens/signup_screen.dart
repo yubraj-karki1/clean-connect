@@ -1,3 +1,4 @@
+import 'package:cleanconnect/Screens/login_screen.dart';
 import 'package:flutter/material.dart';
 // import 'package:recell_bazar/screens/login_screen.dart';
 
@@ -18,7 +19,7 @@ class _SignupScreenState extends State<SignupScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 60),
+            const SizedBox(height: 80),
             Image.asset("assets/images/image1.jpg", height: 100),
             const SizedBox(height: 40),
             Text(
@@ -36,17 +37,20 @@ class _SignupScreenState extends State<SignupScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Don't have an account? ",
+                    "Already have an account?",
                     style: TextStyle(fontSize: 14),
                   ),
                   TextButton(
                     onPressed: () {
-                      // Navigate to signup page
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context)=> const LoginScreen()),
+                        );
                     },
                     child: const Text(
-                      "Create Your Account.",
+                      "Login",
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
@@ -54,7 +58,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ],
               ),
-
             Form(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -128,7 +131,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       decoration: InputDecoration(
                         labelText: "Password",
                         hintText: 'Enter your password',
-                        prefixIcon: Icon(Icons.password),
+                        prefixIcon: Icon(Icons.lock),
                         border: OutlineInputBorder(),
                       ),
                       onChanged: (String value) {},

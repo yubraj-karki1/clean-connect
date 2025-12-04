@@ -13,8 +13,8 @@ class SplashScreen1 extends StatelessWidget {
           children: [
             // Logo Container
             Container(
-              width: 300,
-              height: 300,
+              width: 200,
+              height: 200,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(40),

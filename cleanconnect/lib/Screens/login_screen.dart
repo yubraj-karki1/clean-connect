@@ -1,3 +1,4 @@
+import 'package:cleanconnect/Screens/signup_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -47,7 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      // Navigate to signup page
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context)=> const SignupScreen())
+                       );
                     },
                     child: const Text(
                       "Create Your Account.",
@@ -105,7 +109,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     Center(
                     child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      
+                    },
                     child: const Text(
                     "Forgot Password ?",
                     style: TextStyle(
