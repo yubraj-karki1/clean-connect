@@ -1,3 +1,4 @@
+import 'package:cleanconnect/Screens/forgot_screen.dart';
 import 'package:cleanconnect/Screens/signup_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -110,7 +111,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     Center(
                     child: TextButton(
                     onPressed: () {
-                      
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context)=> const ForgotScreen())
+                      );
                     },
                     child: const Text(
                     "Forgot Password ?",
