@@ -1,4 +1,5 @@
 import 'package:cleanconnect/Screens/forgot_screen.dart';
+import 'package:cleanconnect/Screens/home_screen.dart';
 import 'package:cleanconnect/Screens/signup_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -139,7 +140,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context)=> HomeScreen())
+                        );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       shape: RoundedRectangleBorder(

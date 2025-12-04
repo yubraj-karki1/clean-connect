@@ -151,7 +151,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context)=> const LoginScreen())
+                      );
+                  },
                   style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                     shape: RoundedRectangleBorder(
