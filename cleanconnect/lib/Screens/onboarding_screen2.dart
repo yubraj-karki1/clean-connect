@@ -63,7 +63,7 @@ class OnboardingScreen2 extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Image.asset(
-                    "assets/images/onboard.jpg",  
+                    "assets/images/onboard1.jpg",  
                     fit: BoxFit.contain,
                   ),
                 ),
