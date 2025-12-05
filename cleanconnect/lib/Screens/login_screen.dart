@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
                        );
                     },
                     child: const Text(
-                      "Create Your Account.",
+                      "Register",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

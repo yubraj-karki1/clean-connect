@@ -33,8 +33,8 @@ class _SplashScreen1State extends State<SplashScreen1> {
           children: [
             // Logo Container
             Container(
-              width: 200,
-              height: 200,
+              width: 300,
+              height: 300,
               // decoration: BoxDecoration(
               //   color: Colors.white,
               //   borderRadius: BorderRadius.circular(40),
@@ -50,17 +50,17 @@ class _SplashScreen1State extends State<SplashScreen1> {
 
             const SizedBox(height: 0),
 
-            // Title
-            const Text(
-              "Clean Connect",
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
+            // // Title
+            // const Text(
+            //   "Clean Connect",
+            //   style: TextStyle(
+            //     fontSize: 40,
+            //     fontWeight: FontWeight.bold,
+            //     color: Colors.black,
+            //   ),
+            // ),
 
-            const SizedBox(height: 6),
+            // const SizedBox(height: 6),
 
             // Subtitle
             // const Text(

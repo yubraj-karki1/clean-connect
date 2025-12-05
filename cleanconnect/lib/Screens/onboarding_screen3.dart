@@ -30,7 +30,7 @@ class OnboardingScreen3 extends StatelessWidget {
 
               // Title Text
               const Text(
-                "Clean Home",
+                "Pure Home",
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
@@ -38,7 +38,7 @@ class OnboardingScreen3 extends StatelessWidget {
                 ),
               ),
               const Text(
-                "Clean Life.",
+                "Pure Joy.",
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
