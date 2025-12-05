@@ -15,17 +15,16 @@ class OnboardingScreen1 extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Skip Button
-              Align(
-                alignment: Alignment.topRight,
-                child: Text(
-                  "Skip",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(1),
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-
+              // Align(
+              //   alignment: Alignment.topRight,
+              //   child: Text(
+              //     "Skip",
+              //     style: TextStyle(
+              //       color: Colors.black.withOpacity(1),
+              //       fontSize: 20,
+              //     ),
+              //   ),
+              // ),
               const SizedBox(height: 50),
 
               // Title Text
@@ -50,7 +49,7 @@ class OnboardingScreen1 extends StatelessWidget {
 
               // Subtitle Text
               const Text(
-                "Book Cleaners at the Comfort\nof you home.",
+                "Book Cleaners at the Comfort \n of you home.",
                 style: TextStyle(
                   fontSize: 18,
                   height: 1.5,
@@ -74,12 +73,11 @@ class OnboardingScreen1 extends StatelessWidget {
               // Get Started Button
               Center(
                     child: SizedBox(
-                      width: double.infinity,
+                      width: 200,
                       height: 55,
                       child: ElevatedButton(
                         onPressed: () {
                           // Add your onPressed action here
-                          
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const OnboardingScreen2()),
@@ -92,10 +90,10 @@ class OnboardingScreen1 extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          "Get Started",
+                          "Next",
                           style: TextStyle(
                             color: Colors.black,
-                            fontSize: 18,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

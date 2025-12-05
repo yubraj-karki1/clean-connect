@@ -19,9 +19,9 @@ class _SignupScreenState extends State<SignupScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 80),
-            Image.asset("assets/images/image1.jpg", height: 100),
-            const SizedBox(height: 40),
+            const SizedBox(height: 90),
+            Image.asset("assets/images/image1.jpg", height: 110),
+            const SizedBox(height: 20),
             Text(
               'Register',
               style: TextStyle(
@@ -38,7 +38,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 children: [
                   const Text(
                     "Already have an account?",
-                    style: TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 16),
                   ),
                   TextButton(
                     onPressed: () {
@@ -148,7 +148,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: SizedBox(
-                width: double.infinity,
+                width: 210,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {

@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const Text(
                     "Don't have an account? ",
-                    style: TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 16),
                   ),
                   TextButton(
                     onPressed: () {
@@ -58,13 +58,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       "Create Your Account.",
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
+              
 
               const SizedBox(height: 1),
 
@@ -81,11 +82,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           prefixIcon: Icon(Icons.email),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (value) {
-                          return value!.isEmpty
-                              ? 'Please enter your email'
-                              : null;
-                        },
+                          validator: (value) {
+                            if(value == null || value.isEmpty){
+                              return 'Please enter your email ';
+                            }
+                            return null;
+                          },
                       ),
 
                       const SizedBox(height: 20),
@@ -120,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                     "Forgot Password ?",
                     style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 18,
                     color: Colors.black87,
                     fontWeight: FontWeight.w500,
                     ),
@@ -137,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: SizedBox(
-                  width: double.infinity,
+                  width: 200,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {

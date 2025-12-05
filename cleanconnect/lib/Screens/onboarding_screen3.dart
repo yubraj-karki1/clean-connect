@@ -15,16 +15,16 @@ class OnboardingScreen3 extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Skip Button
-              Align(
-                alignment: Alignment.topRight,
-                child: Text(
-                  "Skip",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(1),
-                    fontSize: 20,
-                  ),
-                ),
-              ),
+              // Align(
+              //   alignment: Alignment.topRight,
+              //   child: Text(
+              //     "Skip",
+              //     style: TextStyle(
+              //       color: Colors.black.withOpacity(1),
+              //       fontSize: 20,
+              //     ),
+              //   ),
+              // ),
 
               const SizedBox(height: 50),
 
@@ -50,9 +50,9 @@ class OnboardingScreen3 extends StatelessWidget {
 
               // Subtitle Text
               const Text(
-                "Book Cleaners at the Comfort\nof you home.",
+                "Turning messy moments into \n clean comfort.",
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 22,
                   height: 1.5,
                   color: Colors.black,
                 ),
@@ -74,7 +74,7 @@ class OnboardingScreen3 extends StatelessWidget {
               // Get Started Button
               Center(
                     child: SizedBox(
-                      width: double.infinity,
+                      width: 200,
                       height: 55,
                       child: ElevatedButton(
                         onPressed: () {
@@ -90,10 +90,10 @@ class OnboardingScreen3 extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          "Next",
+                          "Get Started",
                           style: TextStyle(
                             color: Colors.black,
-                            fontSize: 18,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

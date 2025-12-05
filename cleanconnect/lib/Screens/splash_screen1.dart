@@ -35,10 +35,10 @@ class _SplashScreen1State extends State<SplashScreen1> {
             Container(
               width: 200,
               height: 200,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(40),
-              ),
+              // decoration: BoxDecoration(
+              //   color: Colors.white,
+              //   borderRadius: BorderRadius.circular(40),
+              // ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Image.asset(
@@ -48,13 +48,13 @@ class _SplashScreen1State extends State<SplashScreen1> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 0),
 
             // Title
             const Text(
               "Clean Connect",
               style: TextStyle(
-                fontSize: 35,
+                fontSize: 40,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
