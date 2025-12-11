@@ -1,5 +1,5 @@
+import 'package:cleanconnect/Screens/dashboard_screen.dart';
 import 'package:cleanconnect/Screens/forgot_screen.dart';
-import 'package:cleanconnect/Screens/home_screen.dart';
 import 'package:cleanconnect/Screens/signup_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context)=> HomeScreen())
+                        MaterialPageRoute(builder: (context)=> DashboardScreen())
                         );
                     },
                     style: ElevatedButton.styleFrom(

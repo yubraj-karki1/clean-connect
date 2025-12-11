@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class BookServiceScreen extends StatefulWidget {
-  const BookServiceScreen({super.key});
+class BookService extends StatefulWidget {
+  const BookService({super.key});
 
   @override
-  State<BookServiceScreen> createState() => _BookServiceScreenState();
+  State<BookService> createState() => _BookServiceScreenState();
 }
 
-class _BookServiceScreenState extends State<BookServiceScreen> {
+class _BookServiceScreenState extends State<BookService> {
   String selectedService = "Home Cleaning";
   String selectedDuration = "2 hours";
 
@@ -15,22 +15,6 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-        
-      // BOTTOM NAVIGATION
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black54,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.add_box_outlined), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
-        ],
-      ),
-
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -60,7 +44,7 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
                       "Book a Service",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 25,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -83,34 +67,37 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.black26),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      value: selectedService,
-                      decoration: const InputDecoration(border: InputBorder.none),
-                      items: const [
-                        DropdownMenuItem(
-                          value: "Home Cleaning",
-                          child: Row(
-                            children: [
-                              Icon(Icons.home, color: Colors.orange),
-                              SizedBox(width: 8),
-                              Text("Home Cleaning"),
-                              
-                            ],
-                          ),
+                  DropdownButtonFormField<String>(
+                    value: selectedService,
+                    decoration: const InputDecoration(border: InputBorder.none),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "Home Cleaning",
+                        child: Row(
+                          children: [
+                            Icon(Icons.home, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text("Home Cleaning"),
+                          ],
                         ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedService = value!;
-                        });
-                      },
-                    ),
+                      ),
+                      DropdownMenuItem(
+                        value: "Office Cleaning",
+                        child: Row(
+                          children: [
+                            Icon(Icons.home_max, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text("Office Cleaning"),
+                          ],
+                          
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        selectedService = value!;
+                      });
+                    },
                   ),
 
                   const SizedBox(height: 25),
@@ -167,31 +154,24 @@ class _BookServiceScreenState extends State<BookServiceScreen> {
                   const Text("Duration (Hours)",
                       style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 5),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.black26),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      value: selectedDuration,
-                      decoration: const InputDecoration(border: InputBorder.none),
-                      items: const [
-                        DropdownMenuItem(
-                          value: "2 hours",
-                          child: Text("2 hours"),
-                        ),
-                        DropdownMenuItem(
-                          value: "3 hours",
-                          child: Text("3 hours"),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedDuration = value!;
-                        });
-                      },
-                    ),
+                  DropdownButtonFormField<String>(
+                    value: selectedDuration,
+                    decoration: const InputDecoration(border: InputBorder.none),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "2 hours",
+                        child: Text("2 hours"),
+                      ),
+                      DropdownMenuItem(
+                        value: "3 hours",
+                        child: Text("3 hours"),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        selectedDuration = value!;
+                      });
+                    },
                   ),
 
                   const SizedBox(height: 25),

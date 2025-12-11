@@ -1,36 +1,17 @@
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class Home extends StatefulWidget {
+  const Home({super.key});
 
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-
-      // Bottom Navigation Bar
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-            )
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: const [
-            Icon(Icons.home, size: 30),
-            Icon(Icons.add_box_rounded, size: 30),
-            Icon(Icons.favorite_border, size: 30),
-            Icon(Icons.person_outline, size: 30),
-          ],
-        ),
-      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +59,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                 
                     const SizedBox(height: 20),
-                
+
                     //  Search Bar
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -99,7 +80,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 17),
+            const SizedBox(height: 15),
 
             //  Services Section
             const Padding(
@@ -113,28 +94,28 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 0),
+           // const SizedBox(height: 0),
 
             // Service Icons Grid
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 3,
-                childAspectRatio: 0.85,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                children: [
-                  serviceCard("assets/images/house.jpg", "Home\nCleaning"),
-                  serviceCard("assets/images/office-building.jpg", "Office\nCleaning"),
-                  serviceCard("assets/images/carpet.jpg", "Carpet\nCleaning"),
-                  serviceCard("assets/images/multiple-stars.jpg", "Deep\nCleaning"),
-                  serviceCard("assets/images/window.jpg", "Window\nCleaning"),
-                  serviceCard("assets/images/water-tower.jpg", "Water Tank\nCleaning"),
-                ],
-              ),
-            ),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 20),
+              //   child: GridView.count(
+              //     shrinkWrap: true,
+              //     physics: const NeverScrollableScrollPhysics(),
+              //     crossAxisCount: 3,
+              //     childAspectRatio: 0.85,
+              //     crossAxisSpacing: 15,
+              //     mainAxisSpacing: 15,
+              //     children: [
+              //       serviceCard("assets/images/house.jpg", "Home\nCleaning"),
+              //       serviceCard("assets/images/office-building.jpg", "Office\nCleaning"),
+              //       serviceCard("assets/images/carpet.jpg", "Carpet\nCleaning"),
+              //       serviceCard("assets/images/multiple-stars.jpg", "Deep\nCleaning"),
+              //       serviceCard("assets/images/window.jpg", "Window\nCleaning"),
+              //       serviceCard("assets/images/water-tower.jpg", "Water Tank\nCleaning"),
+              //     ],
+              //   ),
+              // ),
 
             const SizedBox(height: 20),
 
@@ -149,7 +130,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 60),
           ],
         ),

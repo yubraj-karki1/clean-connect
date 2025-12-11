@@ -1,4 +1,8 @@
 import 'package:cleanconnect/Screens/splash_screen1.dart';
+import 'package:cleanconnect/theme/appbar_theme.dart';
+import 'package:cleanconnect/theme/bottom_navigationbar_theme_data.dart';
+import 'package:cleanconnect/theme/input_decoration_theme.dart';
+import 'package:cleanconnect/theme/theme_data.dart';
 import 'package:flutter/material.dart';
 
 class App extends StatelessWidget {
@@ -6,10 +10,15 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      title: 'Flutter Apps for College',
       debugShowCheckedModeBanner: false,
-      home: SplashScreen1()
-      );
-    
+      theme: getApplicationTheme().copyWith(
+        appBarTheme: getAppBarTheme(),
+        inputDecorationTheme: getTextFieldTheme(),
+        bottomNavigationBarTheme: getBottomNavigationBarTheme()
+        ),
+      home: const SplashScreen1(),
+    );
   }
 }
