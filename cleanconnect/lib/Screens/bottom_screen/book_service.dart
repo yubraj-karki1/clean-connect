@@ -1,3 +1,4 @@
+import 'package:cleanconnect/Screens/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 
 class BookService extends StatefulWidget {
@@ -29,14 +30,18 @@ class _BookServiceScreenState extends State<BookService> {
                   bottomRight: Radius.circular(40),
                 ),
               ),
-              
               child: Stack(
                 children: [
                   Positioned(
                     left: 0,
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                     onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context)=> const DashboardScreen())
+                      );
+                  },
                     ),
                   ),
                   const Center(
@@ -88,6 +93,26 @@ class _BookServiceScreenState extends State<BookService> {
                             Icon(Icons.home_max, color: Colors.orange),
                             SizedBox(width: 8),
                             Text("Office Cleaning"),
+                          ],
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: "Window Cleaning",
+                        child: Row(
+                          children: [
+                            Icon(Icons.window, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text("Window Cleaning"),
+                          ],
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: "Carpet Cleaning",
+                        child: Row(
+                          children: [
+                            Icon(Icons.local_laundry_service, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text("Carpet Cleaning"),
                           ],
                           
                         ),

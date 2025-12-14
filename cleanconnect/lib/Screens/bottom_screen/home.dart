@@ -61,18 +61,11 @@ class _HomeState extends State<Home> {
                     const SizedBox(height: 20),
 
                     //  Search Bar
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          icon: Icon(Icons.search, color: Colors.grey.shade600),
-                          hintText: "Search for cleaning service...",
-                          border: InputBorder.none,
-                        ),
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
                       ),
                     ),
                   ],
@@ -94,28 +87,28 @@ class _HomeState extends State<Home> {
               ),
             ),
 
-           // const SizedBox(height: 0),
+           const SizedBox(height: 0),
 
             // Service Icons Grid
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(horizontal: 20),
-              //   child: GridView.count(
-              //     shrinkWrap: true,
-              //     physics: const NeverScrollableScrollPhysics(),
-              //     crossAxisCount: 3,
-              //     childAspectRatio: 0.85,
-              //     crossAxisSpacing: 15,
-              //     mainAxisSpacing: 15,
-              //     children: [
-              //       serviceCard("assets/images/house.jpg", "Home\nCleaning"),
-              //       serviceCard("assets/images/office-building.jpg", "Office\nCleaning"),
-              //       serviceCard("assets/images/carpet.jpg", "Carpet\nCleaning"),
-              //       serviceCard("assets/images/multiple-stars.jpg", "Deep\nCleaning"),
-              //       serviceCard("assets/images/window.jpg", "Window\nCleaning"),
-              //       serviceCard("assets/images/water-tower.jpg", "Water Tank\nCleaning"),
-              //     ],
-              //   ),
-              // ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.85,
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                  children: [
+                    serviceCard("assets/images/house.jpg", "Home\nCleaning"),
+                    serviceCard("assets/images/office-building.jpg", "Office\nCleaning"),
+                    serviceCard("assets/images/carpet.jpg", "Carpet\nCleaning"),
+                    serviceCard("assets/images/multiple-stars.jpg", "Deep\nCleaning"),
+                    serviceCard("assets/images/window.jpg", "Window\nCleaning"),
+                    serviceCard("assets/images/water-tower.jpg", "Water Tank\nCleaning"),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 20),
 

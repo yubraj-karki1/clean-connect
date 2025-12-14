@@ -5,12 +5,12 @@ InputDecorationTheme getTextFieldTheme() {
     filled: true,
     fillColor: Colors.grey.shade200,
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       borderSide: const BorderSide(color: Colors.orange),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: Colors.deepOrange, width: 2),
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.black, width: 2),
     ),
     labelStyle: const TextStyle(
       fontFamily: 'OpenSans-Regular',

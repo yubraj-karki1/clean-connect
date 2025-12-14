@@ -24,11 +24,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text("Button Navigation"),
-      //   centerTitle: true ,
-      //   //backgroundColor: Colors.blue,
-      // ),
       body: LstBottomScreen[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -46,13 +41,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           label: 'Favourite'
           ),
           BottomNavigationBarItem(
-          icon: Icon(Icons.album_outlined),
-          label: 'About'
+          icon: Icon(Icons.person),
+          label: 'Profile'
           ),
         ],
-        // backgroundColor: Colors.blueGrey,
-        // selectedItemColor: Colors.white,
-        // unselectedItemColor: Colors.black,
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
