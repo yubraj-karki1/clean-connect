@@ -9,6 +9,9 @@ class BookService extends StatefulWidget {
 }
 
 class _BookServiceScreenState extends State<BookService> {
+  final TextEditingController dateController = TextEditingController();
+  final TextEditingController timeController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
   String selectedService = "Home Cleaning";
   String selectedDuration = "2 hours";
 
@@ -127,51 +130,76 @@ class _BookServiceScreenState extends State<BookService> {
 
                   const SizedBox(height: 25),
 
-                  // Choose Date
-                  const Text("Choose   Date",
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 5),
-                  TextField(
+                 /// Choose Date
+                  const Text("Choose Date"),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: dateController,
+                    readOnly: true,
                     decoration: InputDecoration(
                       hintText: "mm/dd/yyyy",
-                      suffixIcon: const Icon(Icons.calendar_today),
+                      suffixIcon: Icon(Icons.calendar_today_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                    onTap: () async {
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+      
+                      if (pickedDate != null) {
+                        dateController.text =
+                            "${pickedDate.month}/${pickedDate.day}/${pickedDate.year}";
+                      }
+                    },
                   ),
 
                   const SizedBox(height: 25),
 
-                  // Choose Time
-                  const Text("Choose   Time",
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 5),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: "--:-- --",
-                      suffixIcon: const Icon(Icons.access_time),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
+                  /// Choose Time
+                   const Text("Choose Time"),
+                   const SizedBox(height: 8),
+                   TextFormField(
+                     controller: timeController,
+                     readOnly: true,
+                     decoration: InputDecoration(
+                       hintText: "--:-- --",
+                       suffixIcon: Icon(Icons.access_time),
+                       border: OutlineInputBorder(
+                         borderRadius: BorderRadius.circular(10),
+                       ),
+                     ),
+                     onTap: () async {
+                       TimeOfDay? pickedTime = await showTimePicker(
+                         context: context,
+                         initialTime: TimeOfDay.now(),
+                       );
+
+                       if (pickedTime != null) {
+                         timeController.text = pickedTime.format(context);
+                       }
+                     },
+                   ),
 
                   const SizedBox(height: 25),
 
-                  // Service Address
-                  const Text("Service Address",
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 5),
-                  TextField(
+                  /// Service Address
+                  const Text("Service Address"),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: addressController,
                     decoration: InputDecoration(
                       hintText: "Enter your address",
-                      suffixIcon: const Icon(Icons.location_on_outlined),
+                      suffixIcon: Icon(Icons.location_on_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
+                            ),
+                          ),
+                        ),
 
                   const SizedBox(height: 25),
 
