@@ -98,7 +98,7 @@ class Profile extends StatelessWidget {
             profileInfoCard(
               icon: Icons.location_on_outlined,
               title: "Address",
-              value: "Old Baneshwo",
+              value: "Old Baneshwor",
             ),
 
             const SizedBox(height: 20),
@@ -124,31 +124,68 @@ class Profile extends StatelessWidget {
             const SizedBox(height: 25),
 
             /// Edit Profile Button
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 20),
+            //   child: Container(
+            //     height: 50,
+            //     decoration: BoxDecoration(
+            //       gradient: const LinearGradient(
+            //         colors: [Color(0xff00C9A7), Color(0xff00E1B5)],
+            //       ),
+            //       borderRadius: BorderRadius.circular(30),
+            //     ),
+            //     child: const Center(
+            //       child: Row(
+            //         mainAxisAlignment: MainAxisAlignment.center,
+            //         children: [
+            //           Icon(Icons.edit, color: Colors.white),
+            //           SizedBox(width: 8),
+            //           Text(
+            //             "Edit Profile",
+            //             style: TextStyle(
+            //               color: Colors.white,
+            //               fontSize: 16,
+            //               fontWeight: FontWeight.bold,
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
+            // ),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
                 height: 50,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xff00C9A7), Color(0xff00E1B5)],
-                  ),
-                  borderRadius: BorderRadius.circular(30),
+                colors: [Color(0xff00C9A7), Color(0xff00E1B5)],
                 ),
-                child: const Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.edit, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        "Edit Profile",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                borderRadius: BorderRadius.circular(30),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(30),
+                  onTap: () {
+                    // EDIT PROFILE ACTION
+                    debugPrint("Edit Profile clicked");
+                  },
+                  child: const Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          "Edit Profile",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
