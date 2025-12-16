@@ -12,7 +12,7 @@ class Profile extends StatelessWidget {
             print("Button Pressed");
           },
           child: const Text(
-            "Click Me",
+            "Click",
             style: TextStyle(
               color: Colors.black,
               fontFamily: 'OpenSans-Bold',
