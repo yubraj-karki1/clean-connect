@@ -14,7 +14,7 @@ class Profile extends StatelessWidget {
           child: const Text(
             "Click Me",
             style: TextStyle(
-              color: Color(0xFF5B16D0),
+              color: Colors.black,
               fontFamily: 'OpenSans-Bold',
               fontSize: 25),
           ),
