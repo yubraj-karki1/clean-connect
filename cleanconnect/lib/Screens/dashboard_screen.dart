@@ -1,7 +1,7 @@
-import 'package:cleanconnect/Screens/bottom_screen/about.dart';
+import 'package:cleanconnect/Screens/bottom_screen/profile.dart';
 import 'package:cleanconnect/Screens/bottom_screen/book_service.dart';
 import 'package:cleanconnect/Screens/bottom_screen/home.dart';
-import 'package:cleanconnect/Screens/bottom_screen/profile.dart';
+import 'package:cleanconnect/Screens/bottom_screen/Favourite.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -17,8 +17,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Widget> LstBottomScreen = [
     const Home(),
     const BookService(),
-    const Profile(),
-    const About(),
+    const Favourite(),
+    const Profile (),
   ];
 
   @override

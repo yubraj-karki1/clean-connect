@@ -5,21 +5,8 @@ class Profile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            print("Button Pressed");
-          },
-          child: const Text(
-            "Click Me",
-            style: TextStyle(
-              color: Color(0xFF5B16D0),
-              fontFamily: 'OpenSans-Bold',
-              fontSize: 25),
-          ),
-        ),
-      ),
+    return SizedBox.expand(
+      child: Center(child: Text(" Screen"),),
     );
   }
 }
