@@ -12,7 +12,7 @@ class Favourite extends StatelessWidget {
             print("Button Pressed");
           },
           child: const Text(
-            "Click",
+            "Favourite Screen",
             style: TextStyle(
               color: Colors.black,
               fontFamily: 'OpenSans-Bold',
