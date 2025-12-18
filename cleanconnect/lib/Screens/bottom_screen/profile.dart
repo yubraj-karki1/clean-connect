@@ -78,7 +78,7 @@ class Profile extends StatelessWidget {
 
             /// Name
             const Text(
-              "Guest User",
+              "Yubraj Karki",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
