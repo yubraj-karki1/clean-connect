@@ -5,10 +5,6 @@ class Profile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    return SizedBox.expand(
-      child: Center(child: Text("Profile Screen"),),
-=======
     return Scaffold(
       backgroundColor: const Color(0xffF7F8FA),
       body: SingleChildScrollView(
@@ -313,7 +309,6 @@ class Profile extends StatelessWidget {
           ],
         ),
       ),
->>>>>>> sprint-2
     );
   }
 }
