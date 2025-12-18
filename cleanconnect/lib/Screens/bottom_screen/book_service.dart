@@ -131,163 +131,163 @@ class _BookServiceScreenState extends State<BookService> {
                   const SizedBox(height: 25),
 
                  /// Choose Date
-                  const Text("Choose Date"),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: dateController,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      hintText: "mm/dd/yyyy",
-                      suffixIcon: Icon(Icons.calendar_today_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                      );
+                  // const Text("Choose Date"),
+                  // const SizedBox(height: 8),
+                  // TextFormField(
+                  //   controller: dateController,
+                  //   readOnly: true,
+                  //   decoration: InputDecoration(
+                  //     hintText: "mm/dd/yyyy",
+                  //     suffixIcon: Icon(Icons.calendar_today_outlined),
+                  //     border: OutlineInputBorder(
+                  //       borderRadius: BorderRadius.circular(10),
+                  //     ),
+                  //   ),
+                  //   onTap: () async {
+                  //     DateTime? pickedDate = await showDatePicker(
+                  //       context: context,
+                  //       initialDate: DateTime.now(),
+                  //       firstDate: DateTime(2020),
+                  //       lastDate: DateTime(2100),
+                  //     );
       
-                      if (pickedDate != null) {
-                        dateController.text =
-                            "${pickedDate.month}/${pickedDate.day}/${pickedDate.year}";
-                      }
-                    },
-                  ),
+                  //     if (pickedDate != null) {
+                  //       dateController.text =
+                  //           "${pickedDate.month}/${pickedDate.day}/${pickedDate.year}";
+                  //     }
+                  //   },
+                  // ),
 
-                  const SizedBox(height: 25),
+                  // const SizedBox(height: 25),
 
-                  /// Choose Time
-                   const Text("Choose Time"),
-                   const SizedBox(height: 8),
-                   TextFormField(
-                     controller: timeController,
-                     readOnly: true,
-                     decoration: InputDecoration(
-                       hintText: "--:-- --",
-                       suffixIcon: Icon(Icons.access_time),
-                       border: OutlineInputBorder(
-                         borderRadius: BorderRadius.circular(10),
-                       ),
-                     ),
-                     onTap: () async {
-                       TimeOfDay? pickedTime = await showTimePicker(
-                         context: context,
-                         initialTime: TimeOfDay.now(),
-                       );
+                  // /// Choose Time
+                  //  const Text("Choose Time"),
+                  //  const SizedBox(height: 8),
+                  //  TextFormField(
+                  //    controller: timeController,
+                  //    readOnly: true,
+                  //    decoration: InputDecoration(
+                  //      hintText: "--:-- --",
+                  //      suffixIcon: Icon(Icons.access_time),
+                  //      border: OutlineInputBorder(
+                  //        borderRadius: BorderRadius.circular(10),
+                  //      ),
+                  //    ),
+                  //    onTap: () async {
+                  //      TimeOfDay? pickedTime = await showTimePicker(
+                  //        context: context,
+                  //        initialTime: TimeOfDay.now(),
+                  //      );
 
-                       if (pickedTime != null) {
-                         timeController.text = pickedTime.format(context);
-                       }
-                     },
-                   ),
+                  //      if (pickedTime != null) {
+                  //        timeController.text = pickedTime.format(context);
+                  //      }
+                  //    },
+                  //  ),
 
-                  const SizedBox(height: 25),
+                  // const SizedBox(height: 25),
 
-                  /// Service Address
-                  const Text("Service Address"),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: addressController,
-                    decoration: InputDecoration(
-                      hintText: "Enter your address",
-                      suffixIcon: Icon(Icons.location_on_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
+                  // /// Service Address
+                  // const Text("Service Address"),
+                  // const SizedBox(height: 8),
+                  // TextFormField(
+                  //   controller: addressController,
+                  //   decoration: InputDecoration(
+                  //     hintText: "Enter your address",
+                  //     suffixIcon: Icon(Icons.location_on_outlined),
+                  //     border: OutlineInputBorder(
+                  //       borderRadius: BorderRadius.circular(10),
+                  //           ),
+                  //         ),
+                  //       ),
 
-                  const SizedBox(height: 25),
+                  // const SizedBox(height: 25),
 
-                  // Duration
-                  const Text("Duration (Hours)",
-                      style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 5),
-                  DropdownButtonFormField<String>(
-                    value: selectedDuration,
-                    decoration: const InputDecoration(border: InputBorder.none),
-                    items: const [
-                      DropdownMenuItem(
-                        value: "2 hours",
-                        child: Text("2 hours"),
-                      ),
-                      DropdownMenuItem(
-                        value: "3 hours",
-                        child: Text("3 hours"),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        selectedDuration = value!;
-                      });
-                    },
-                  ),
+                  // // Duration
+                  // const Text("Duration (Hours)",
+                  //     style: TextStyle(fontWeight: FontWeight.w600)),
+                  // const SizedBox(height: 5),
+                  // DropdownButtonFormField<String>(
+                  //   value: selectedDuration,
+                  //   decoration: const InputDecoration(border: InputBorder.none),
+                  //   items: const [
+                  //     DropdownMenuItem(
+                  //       value: "2 hours",
+                  //       child: Text("2 hours"),
+                  //     ),
+                  //     DropdownMenuItem(
+                  //       value: "3 hours",
+                  //       child: Text("3 hours"),
+                  //     ),
+                  //   ],
+                  //   onChanged: (value) {
+                  //     setState(() {
+                  //       selectedDuration = value!;
+                  //     });
+                  //   },
+                  // ),
 
-                  const SizedBox(height: 25),
+                  // const SizedBox(height: 25),
 
-                  // PRICE BREAKDOWN BOX
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD1F2F5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          "💲 Price Breakdown",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 10),
+                  // // PRICE BREAKDOWN BOX
+                  // Container(
+                  //   width: double.infinity,
+                  //   padding: const EdgeInsets.all(15),
+                  //   decoration: BoxDecoration(
+                  //     color: const Color(0xFFD1F2F5),
+                  //     borderRadius: BorderRadius.circular(12),
+                  //   ),
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: const [
+                  //       Text(
+                  //         "💲 Price Breakdown",
+                  //         style: TextStyle(
+                  //           fontWeight: FontWeight.bold,
+                  //           fontSize: 16,
+                  //         ),
+                  //       ),
+                  //       SizedBox(height: 10),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Hourly rate"),
-                            Text("\$35/hr"),
-                          ],
-                        ),
-                        SizedBox(height: 5),
+                  //       Row(
+                  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //         children: [
+                  //           Text("Hourly rate"),
+                  //           Text("\$35/hr"),
+                  //         ],
+                  //       ),
+                  //       SizedBox(height: 5),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("Duration"),
-                            Text("2 hour(s)"),
-                          ],
-                        ),
+                  //       Row(
+                  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //         children: [
+                  //           Text("Duration"),
+                  //           Text("2 hour(s)"),
+                  //         ],
+                  //       ),
 
-                        Divider(),
+                  //       Divider(),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Total",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 18),
-                            ),
-                            Text(
-                              "\$70",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 18),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  //       Row(
+                  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //         children: [
+                  //           Text(
+                  //             "Total",
+                  //             style: TextStyle(
+                  //                 fontWeight: FontWeight.bold, fontSize: 18),
+                  //           ),
+                  //           Text(
+                  //             "\$70",
+                  //             style: TextStyle(
+                  //                 fontWeight: FontWeight.bold, fontSize: 18),
+                  //           ),
+                  //         ],
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 550),
 
                   // Confirm Booking Button
                   SizedBox(

@@ -1,7 +1,11 @@
 import 'package:cleanconnect/Screens/bottom_screen/profile.dart';
 import 'package:cleanconnect/Screens/bottom_screen/book_service.dart';
 import 'package:cleanconnect/Screens/bottom_screen/home.dart';
+<<<<<<< HEAD
 import 'package:cleanconnect/Screens/bottom_screen/Favourite.dart';
+=======
+import 'package:cleanconnect/Screens/bottom_screen/favourite.dart';
+>>>>>>> sprint-2
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -18,7 +22,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const Home(),
     const BookService(),
     const Favourite(),
+<<<<<<< HEAD
     const Profile (),
+=======
+    const Profile(),
+>>>>>>> sprint-2
   ];
 
   @override
@@ -38,7 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           BottomNavigationBarItem(
           icon: Icon(Icons.favorite),
-          label: 'Favourite'
+          label: 'Favourites'
           ),
           BottomNavigationBarItem(
           icon: Icon(Icons.person),
