@@ -1,8 +1,8 @@
-import 'package:cleanconnect/features/onboarding/onboarding_screen3.dart';
+import 'package:cleanconnect/features/onboarding/presentation/pages/onboarding_screen2.dart';
 import 'package:flutter/material.dart';
 
-class OnboardingScreen2 extends StatelessWidget {
-  const OnboardingScreen2({super.key});
+class OnboardingScreen1 extends StatelessWidget {
+  const OnboardingScreen1({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +25,11 @@ class OnboardingScreen2 extends StatelessWidget {
               //     ),
               //   ),
               // ),
-
               const SizedBox(height: 50),
 
               // Title Text
               const Text(
-                "Dust-Free",
+                "Clean Home",
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
@@ -38,7 +37,7 @@ class OnboardingScreen2 extends StatelessWidget {
                 ),
               ),
               const Text(
-                "Worry-Free.",
+                "Clean Life.",
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -50,9 +49,9 @@ class OnboardingScreen2 extends StatelessWidget {
 
               // Subtitle Text
               const Text(
-                "Where cleanliness\n meets comfort.",
+                "Book Cleaners at the Comfort \n of you home.",
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 18,
                   height: 1.5,
                   color: Colors.black,
                 ),
@@ -63,7 +62,7 @@ class OnboardingScreen2 extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Image.asset(
-                    "assets/images/onboard1.jpg",  
+                    "assets/images/onboard.jpg",  
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -81,7 +80,7 @@ class OnboardingScreen2 extends StatelessWidget {
                           // Add your onPressed action here
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const OnboardingScreen3()),
+                            MaterialPageRoute(builder: (context) => const OnboardingScreen2()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
