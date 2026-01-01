@@ -1,5 +1,5 @@
 import 'package:cleanconnect/features/dashboard/dashboard_screen.dart';
-import 'package:cleanconnect/features/item/forgot_screen.dart';
+import 'package:cleanconnect/features/dashboard/forgot_screen.dart';
 import 'package:cleanconnect/features/auth/presentation/pages/signup_screen.dart';
 import 'package:flutter/material.dart';
 
