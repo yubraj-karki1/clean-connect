@@ -1,4 +1,4 @@
-import 'package:cleanconnect/Screens/dashboard_screen.dart';
+import 'package:cleanconnect/features/dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 
 class BookService extends StatefulWidget {

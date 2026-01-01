@@ -1,6 +1,6 @@
-import 'package:cleanconnect/Screens/dashboard_screen.dart';
+import 'package:cleanconnect/features/dashboard/dashboard_screen.dart';
 import 'package:cleanconnect/Screens/forgot_screen.dart';
-import 'package:cleanconnect/Screens/signup_screen.dart';
+import 'package:cleanconnect/features/auth/presentation/pages/signup_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -60,6 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -102,10 +103,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: OutlineInputBorder(),
                          ),
                          validator: (value) {
-                          return value!.isEmpty
-                              ? 'Please enter your email'
-                              : null;
-                        },
+                  if (value == null || value.isEmpty) {
+                    return "Please enter second number";
+                  }
+                  return null;
+                },
                     ),
                     
 

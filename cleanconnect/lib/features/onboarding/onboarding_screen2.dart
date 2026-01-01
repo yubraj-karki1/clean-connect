@@ -1,4 +1,4 @@
-import 'package:cleanconnect/Screens/onboarding_screen3.dart';
+import 'package:cleanconnect/features/onboarding/onboarding_screen3.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingScreen2 extends StatelessWidget {

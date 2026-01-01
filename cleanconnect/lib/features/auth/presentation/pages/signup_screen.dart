@@ -1,4 +1,4 @@
-import 'package:cleanconnect/Screens/login_screen.dart';
+import 'package:cleanconnect/features/auth/presentation/pages/login_screen.dart';
 import 'package:flutter/material.dart';
 // import 'package:recell_bazar/screens/login_screen.dart';
 
