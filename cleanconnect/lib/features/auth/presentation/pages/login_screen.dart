@@ -51,7 +51,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     });
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
