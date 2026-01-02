@@ -32,7 +32,7 @@ class _SplashScreen1State extends State<SplashScreen1> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Logo Container
-            Container(
+            SizedBox(
               width: 300,
               height: 300,
               // decoration: BoxDecoration(

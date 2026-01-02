@@ -76,7 +76,7 @@ class _BookServiceScreenState extends State<BookService> {
                   const SizedBox(height: 10),
 
                   DropdownButtonFormField<String>(
-                    value: selectedService,
+                    initialValue: selectedService,
                     decoration: const InputDecoration(border: InputBorder.none),
                     items: const [
                       DropdownMenuItem(

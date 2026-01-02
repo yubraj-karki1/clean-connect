@@ -1,18 +1,55 @@
+import 'package:cleanconnect/app/routes/app_routes.dart';
+import 'package:cleanconnect/core/utils/snackbar_utils.dart';
+import 'package:cleanconnect/features/auth/presentation/pages/signup_screen.dart';
+import 'package:cleanconnect/features/auth/presentation/state/auth_state.dart';
+import 'package:cleanconnect/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:cleanconnect/features/dashboard/presentation/pages/forgot_screen.dart';
-import 'package:cleanconnect/features/auth/presentation/pages/signup_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class LoginPage extends ConsumerStatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginPageState extends ConsumerState<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_formKey.currentState!.validate()) {
+      await ref
+          .read(authViewModelProvider.notifier)
+          .login(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+    }
+  }
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authViewModelProvider);
+
+    // Listen to auth state changes
+    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated) {
+        AppRoutes.pushReplacement(context, const DashboardScreen());
+      } else if (next.status == AuthStatus.error && next.errorMessage != null) {
+        SnackbarUtils.showError(context, next.errorMessage!);
+      }
+    });
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
@@ -109,10 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   return null;
                 },
                     ),
-                    
-
                     const SizedBox(height: 10),
-
                     Center(
                     child: TextButton(
                     onPressed: () {
@@ -144,12 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 200,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context)=> DashboardScreen())
-                        );
-                    },
+                    onPressed: _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       shape: RoundedRectangleBorder(
