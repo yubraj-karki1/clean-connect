@@ -69,7 +69,7 @@ class AuthHiveModel extends HiveObject {
       password: entity.password,
       profilePicture: entity.profilePicture, 
       address: '',
-       username: '',
+      username: '',
     );
   }
 

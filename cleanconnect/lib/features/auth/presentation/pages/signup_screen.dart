@@ -13,12 +13,11 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController(text: "Nishan Giri");
+  final _emailController = TextEditingController(text: "nishan@gmail.com");
+  final _phoneController = TextEditingController(text: "1234567890");
+  final _addressController = TextEditingController(text: "Ktm,Nepal");
+  final _passwordController = TextEditingController(text: "nishan123");
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -28,7 +27,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _usernameController.dispose();
     _passwordController.dispose();
     _addressController.dispose();
     super.dispose();
@@ -50,9 +48,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        username: _usernameController.text.trim(), // Use actual username
         phoneNumber: _phoneController.text.trim(), // ADD THIS LINE
         address: _addressController.text.trim(),
+        profilePicture: "random.png",
+        confirmPassword: _passwordController.text.trim(),
       );
       
   // The ref.listen in the build method will handle showing success/error

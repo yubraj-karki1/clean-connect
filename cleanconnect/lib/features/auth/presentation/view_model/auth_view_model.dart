@@ -27,9 +27,10 @@ class AuthViewModel extends Notifier<AuthState> {
   Future<void> register({
     required String fullName,
     required String email,
-    required String username,
     required String password,
     required String address,
+    required String profilePicture,
+    String? confirmPassword,
     String? phoneNumber, 
   }) async {
     state = state.copyWith(status: AuthStatus.loading);
@@ -43,7 +44,8 @@ class AuthViewModel extends Notifier<AuthState> {
         password: password,
         phoneNumber: phoneNumber,
         address: address,
-        username: username,
+        profilePicture:profilePicture,
+        confirmPassword: confirmPassword
       ),
     );
 

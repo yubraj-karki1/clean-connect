@@ -10,6 +10,7 @@ class AuthApiModel {
   final String address;
   final String?password;
   final String? profilePicture;
+  final String? confirmPassword;
 
   AuthApiModel({
     this.id,
@@ -18,33 +19,38 @@ class AuthApiModel {
     this.password,
     required this.address,
     this.phoneNumber,
-    required this.profilePicture
+    required this.profilePicture,
+    this.confirmPassword
   });
 
   //toJSON
   Map<String, dynamic> toJson(){
     return{
-      "name" : fullName,
+
+      "fullName" : fullName,
       "email" : email,
       "phoneNumber" : phoneNumber,
       "address" : address,
       "password" : password,
       "profilePicture": profilePicture,
+      "confirmPassword":confirmPassword
     };
   }
 
   //from JSON 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
-    return AuthApiModel(
-      id: json['id'] ?? json['_id'],
-      fullName: json['name'] as String,
-      email: json['email'] as String,
-      phoneNumber: json['phoneNumber'] as String?,
-      address: json['address'] as String,
-      password: json['password'] as String?,
-      profilePicture: json['profilePicture'] as String?,
-    );
-  }
+  return AuthApiModel(
+    // The '??' operator provides a default value if the JSON field is null
+    id: json['_id'] as String? ?? '', 
+    fullName: json['fullName'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    // This is line 47! We change 'as String' to 'as String?' then provide a default
+    address: json['address'] as String? ?? '', 
+    phoneNumber: json['phoneNumber'] as String? ?? '',
+    password: json['password'] as String? ?? '',
+    profilePicture: json['profilePicture'] as String? ?? '',
+  );
+}
 
   // toEntity
   AuthEntity toEntity(){
@@ -55,6 +61,7 @@ class AuthApiModel {
       phoneNumber: phoneNumber,
       address: address,
       profilePicture: profilePicture,
+      confirmPassword: confirmPassword
     );
   }
   
@@ -67,12 +74,9 @@ class AuthApiModel {
       address: entity.address,
       password: entity.password,
       profilePicture: entity.profilePicture,
+      confirmPassword: entity.confirmPassword
     );
   }
 
-  // toEntityList
-  static List<AuthEntity> toEntityList(List<AuthApiModel> models){
-    return models.map((model) => model.toEntity()).toList();
-  }
 
 }

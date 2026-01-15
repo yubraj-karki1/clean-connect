@@ -46,16 +46,20 @@ class AuthRepository implements IAuthRepository {
         final apiModel = AuthApiModel.fromEntity(user);
         await _authRemoteDataSource.register(apiModel);
         return const Right(true);
-      } on DioException catch(e){
-        return Left(
-          ApiFailure(
-            message: e.response?.data['message'] ?? 'Registration Failed',
-            statusCode: e.response?.statusCode,
-          ),
-        );
-      }catch (e){
-        return Left(ApiFailure(message: e.toString()));
-      }
+      } on DioException catch (e) {
+  // 1. Safely extract the message from the response body
+  // 2. We check if data is a Map before accessing ["message"]
+  String errorMessage = "Failed to Signup"; 
+  if (e.response?.data != null && e.response?.data is Map) {
+    errorMessage = e.response?.data["message"]?.toString() ?? "Failed to Signup";
+  }
+  return Left(
+    ApiFailure(
+      message: errorMessage,
+      statusCode: e.response?.statusCode,
+    ),
+  );
+}
     }else{
       try{
         // check is email already exists
@@ -73,6 +77,7 @@ class AuthRepository implements IAuthRepository {
           password: user.password,
           profilePicture: user.profilePicture, 
           username: '',
+          
         );
         await _authDataSource.register(authModel);
         return const Right(true);
