@@ -13,11 +13,11 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: "Nishan Giri");
-  final _emailController = TextEditingController(text: "nishan@gmail.com");
-  final _phoneController = TextEditingController(text: "1234567890");
-  final _addressController = TextEditingController(text: "Ktm,Nepal");
-  final _passwordController = TextEditingController(text: "nishan123");
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;

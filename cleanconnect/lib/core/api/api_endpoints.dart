@@ -3,7 +3,7 @@ class ApiEndpoints {
 
   // Base URL - change this for production
   // static const String baseUrl = 'http://192.168.:3000/api/v1';
-  static const String baseUrl = 'http://localhost:5000/api';
+  static const String baseUrl = 'http://10.0.2.2:5000/api';
 
 
   //static const String baseUrl = 'http://localhost:3000/api/v1';ip halna pardaina?
@@ -16,6 +16,6 @@ class ApiEndpoints {
 // ========================= Auth Endpoints =========================
   static const String login = "/auth/login";
   static const String signup = "/auth/register";
-  
+   
 
 }

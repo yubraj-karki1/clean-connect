@@ -1,5 +1,3 @@
-
-
 import 'package:cleanconnect/features/auth/domain/entities/auth_entity.dart';
 
 class AuthApiModel {
@@ -40,11 +38,9 @@ class AuthApiModel {
   //from JSON 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
   return AuthApiModel(
-    // The '??' operator provides a default value if the JSON field is null
     id: json['_id'] as String? ?? '', 
     fullName: json['fullName'] as String? ?? '',
     email: json['email'] as String? ?? '',
-    // This is line 47! We change 'as String' to 'as String?' then provide a default
     address: json['address'] as String? ?? '', 
     phoneNumber: json['phoneNumber'] as String? ?? '',
     password: json['password'] as String? ?? '',
