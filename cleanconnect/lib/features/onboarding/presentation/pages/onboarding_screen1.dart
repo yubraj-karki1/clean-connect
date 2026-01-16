@@ -1,8 +1,8 @@
-import 'package:cleanconnect/features/auth/presentation/pages/login_screen.dart';
+import 'package:cleanconnect/features/onboarding/presentation/pages/onboarding_screen2.dart';
 import 'package:flutter/material.dart';
 
-class OnboardingScreen3 extends StatelessWidget {
-  const OnboardingScreen3({super.key});
+class OnboardingScreen1 extends StatelessWidget {
+  const OnboardingScreen1({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +25,11 @@ class OnboardingScreen3 extends StatelessWidget {
               //     ),
               //   ),
               // ),
-
               const SizedBox(height: 50),
 
               // Title Text
               const Text(
-                "Pure Home",
+                "Clean Home",
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
@@ -38,7 +37,7 @@ class OnboardingScreen3 extends StatelessWidget {
                 ),
               ),
               const Text(
-                "Pure Joy.",
+                "Clean Life.",
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -50,9 +49,9 @@ class OnboardingScreen3 extends StatelessWidget {
 
               // Subtitle Text
               const Text(
-                "Turning messy moments into \n clean comfort.",
+                "Book Cleaners at the Comfort \n of you home.",
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 18,
                   height: 1.5,
                   color: Colors.black,
                 ),
@@ -63,7 +62,7 @@ class OnboardingScreen3 extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Image.asset(
-                    "assets/images/onboard2.jpg",  
+                    "assets/images/onboard.jpg",  
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -78,9 +77,10 @@ class OnboardingScreen3 extends StatelessWidget {
                       height: 55,
                       child: ElevatedButton(
                         onPressed: () {
+                          // Add your onPressed action here
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(builder: (context) => const OnboardingScreen2()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -90,7 +90,7 @@ class OnboardingScreen3 extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          "Get Started",
+                          "Next",
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: 22,

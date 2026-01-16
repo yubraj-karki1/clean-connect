@@ -1,3 +1,4 @@
+<<<<<<< HEAD:cleanconnect/lib/features/dashboard/dashboard_screen.dart
 
 // import 'package:cleanconnect/Screens/bottom_screen/Favourite.dart';
 // import 'package:cleanconnect/Screens/bottom_screen/profile.dart';
@@ -10,6 +11,12 @@ import 'package:cleanconnect/features/dashboard/bottom_screen/book_service.dart'
 import 'package:cleanconnect/features/dashboard/bottom_screen/home.dart';
 import 'package:cleanconnect/features/dashboard/bottom_screen/favourite.dart';
 
+=======
+import 'package:cleanconnect/features/dashboard/presentation/pages/bottom_screen/profile.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/bottom_screen/book_service.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/bottom_screen/home.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/bottom_screen/favourite.dart';
+>>>>>>> sprint-3:cleanconnect/lib/features/dashboard/presentation/pages/dashboard_screen.dart
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {

@@ -1,4 +1,4 @@
-import 'package:cleanconnect/features/onboarding/onboarding_screen1.dart';
+import 'package:cleanconnect/features/onboarding/presentation/pages/onboarding_screen1.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen1 extends StatefulWidget {
@@ -32,7 +32,7 @@ class _SplashScreen1State extends State<SplashScreen1> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Logo Container
-            Container(
+            SizedBox(
               width: 300,
               height: 300,
               // decoration: BoxDecoration(

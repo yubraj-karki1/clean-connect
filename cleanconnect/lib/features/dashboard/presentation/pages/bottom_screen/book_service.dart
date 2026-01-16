@@ -1,4 +1,4 @@
-import 'package:cleanconnect/features/dashboard/dashboard_screen.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 
 class BookService extends StatefulWidget {
@@ -76,7 +76,7 @@ class _BookServiceScreenState extends State<BookService> {
                   const SizedBox(height: 10),
 
                   DropdownButtonFormField<String>(
-                    value: selectedService,
+                    initialValue: selectedService,
                     decoration: const InputDecoration(border: InputBorder.none),
                     items: const [
                       DropdownMenuItem(

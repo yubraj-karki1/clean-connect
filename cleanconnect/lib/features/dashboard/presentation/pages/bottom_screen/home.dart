@@ -36,7 +36,8 @@ class _HomeState extends State<Home> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text(
-                          "Hello, Guest 👋",
+                          // "Hello, Guest 👋",
+                          "Hello, User",
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
