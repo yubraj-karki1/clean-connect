@@ -39,17 +39,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
   @override
-  Widget build(BuildContext context) {
-    final authState = ref.watch(authViewModelProvider);
+Widget build(BuildContext context) {
+  final authState = ref.watch(authViewModelProvider);
+  ref.listen<AuthState>(authViewModelProvider, (previous, next) {
+    if (next.status == AuthStatus.authenticated) {
+      SnackbarUtils.showSuccess(
+        context, 
+        'Login successful! Welcome back.',
+      );
+      AppRoutes.pushReplacement(context, const DashboardScreen());
+    } 
+      else if (next.status == AuthStatus.error && next.errorMessage != null) {
+      SnackbarUtils.showError(
+        context, 
+        next.errorMessage!,
+      );
+    }
+  });
 
-    // Listen to auth state changes
-    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
-      if (next.status == AuthStatus.authenticated) {
-        AppRoutes.pushReplacement(context, const DashboardScreen());
-      } else if (next.status == AuthStatus.error && next.errorMessage != null) {
-        SnackbarUtils.showError(context, next.errorMessage!);
-      }
-    });
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
