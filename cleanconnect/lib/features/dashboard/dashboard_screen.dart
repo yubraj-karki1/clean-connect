@@ -1,7 +1,14 @@
-import 'package:cleanconnect/Screens/bottom_screen/Favourite.dart';
-import 'package:cleanconnect/Screens/bottom_screen/profile.dart';
-import 'package:cleanconnect/Screens/bottom_screen/book_service.dart';
-import 'package:cleanconnect/Screens/bottom_screen/home.dart';
+
+// import 'package:cleanconnect/Screens/bottom_screen/Favourite.dart';
+// import 'package:cleanconnect/Screens/bottom_screen/profile.dart';
+// import 'package:cleanconnect/Screens/bottom_screen/book_service.dart';
+// import 'package:cleanconnect/Screens/bottom_screen/home.dart';
+
+
+import 'package:cleanconnect/features/dashboard/bottom_screen/profile.dart';
+import 'package:cleanconnect/features/dashboard/bottom_screen/book_service.dart';
+import 'package:cleanconnect/features/dashboard/bottom_screen/home.dart';
+import 'package:cleanconnect/features/dashboard/bottom_screen/favourite.dart';
 
 import 'package:flutter/material.dart';
 

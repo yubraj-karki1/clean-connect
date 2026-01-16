@@ -1,4 +1,4 @@
-import 'package:cleanconnect/app.dart';
+import 'package:cleanconnect/app/app.dart';
 import 'package:flutter/material.dart';
 
 
