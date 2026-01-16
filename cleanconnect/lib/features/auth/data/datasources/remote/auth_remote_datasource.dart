@@ -1,4 +1,3 @@
-
 import 'package:cleanconnect/core/api/api_client.dart';
 import 'package:cleanconnect/core/api/api_endpoints.dart';
 import 'package:cleanconnect/core/services/storage/user_session_service.dart';
@@ -34,7 +33,6 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource{
   }
 
   @override
-// 1. Remove the '?' to match 'Future<AuthApiModel>' in the Interface
 Future<AuthApiModel> login(String email, String password) async {
   try {
     final response = await _apiClient.post(
@@ -45,24 +43,20 @@ Future<AuthApiModel> login(String email, String password) async {
       },
     );
 
-    // 2. Safely check if the response was successful
     if (response.statusCode == 200 && response.data['success'] == true) {
       final data = response.data['data'] as Map<String, dynamic>;
       
-      // This will use the safe fromJson we discussed earlier
       final user = AuthApiModel.fromJson(data);
 
-      // 3. Save to session with null-fallbacks (?? "") to prevent the Null error
       await _userSessionService.saveUserSession(
-        userId: user.id ?? "", // Use ?? fallback instead of !
+        userId: user.id ?? "", 
         email: email,
         fullName: user.fullName ?? "User",
-        address: user.address ?? "", // This prevents the 'Null' subtype error
+        address: user.address ?? "", 
       );
 
       return user;
     } else {
-      // 4. If success is false, throw a DioException so your Repository catch block handles it
       throw DioException(
         requestOptions: response.requestOptions,
         response: response,
@@ -70,7 +64,6 @@ Future<AuthApiModel> login(String email, String password) async {
       );
     }
   } catch (e) {
-    // Re-throw the error so it's caught by your AuthRepository
     rethrow;
   }
 }
