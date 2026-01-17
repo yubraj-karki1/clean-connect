@@ -6,7 +6,7 @@ import 'package:cleanconnect/features/auth/data/models/auth_api_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// create a provider
+// ========create a provider=============
 final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref){
   return AuthRemoteDatasource(
     apiClient : ref.read(apiClientProvider),
