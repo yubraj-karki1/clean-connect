@@ -67,7 +67,6 @@ Future<AuthApiModel> login(String email, String password) async {
     rethrow;
   }
 }
-  // =================== Register ==============
   @override
   Future<AuthApiModel> register(AuthApiModel user) async{
     final response = await _apiClient.post(
