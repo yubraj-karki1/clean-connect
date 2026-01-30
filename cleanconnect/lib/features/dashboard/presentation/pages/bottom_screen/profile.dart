@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:cleanconnect/core/api/api_endpoints.dart';
 import 'package:cleanconnect/core/providers/profile_image_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/profile_provider.dart';
 import 'package:flutter/material.dart';
@@ -17,8 +16,7 @@ class ProfileScreen extends ConsumerWidget {
       backgroundColor: Colors.grey[100],
       body: profileState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) =>
-            Center(child: Text("Error: ${err.toString()}")),
+        error: (err, stack) => Center(child: Text("Error: ${err.toString()}")),
         data: (user) => SingleChildScrollView(
           child: Column(
             children: [
@@ -85,9 +83,9 @@ class ProfileScreen extends ConsumerWidget {
     Future<void> pickImage(ImageSource source) async {
       final XFile? image = await picker.pickImage(source: source);
       if (image != null) {
-        await ref.read(profileImageProvider(user.id).notifier)
+        await ref
+            .read(profileImageProvider(user.id).notifier)
             .uploadImage(File(image.path));
-        // Refresh the profile provider to get the updated image URL
         ref.refresh(profileProvider);
       }
     }
@@ -132,9 +130,13 @@ class ProfileScreen extends ConsumerWidget {
               CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.grey[300],
-                backgroundImage: (user.profileImage != null && user.profileImage.toString().isNotEmpty && user.profileImage.toString() != "null")
-                  ? NetworkImage("http://10.0.2.2:5000/${user.profileImage}?v=${DateTime.now().millisecondsSinceEpoch}")
-                  : const AssetImage("assets/images/default_profile.png") as ImageProvider,
+                backgroundImage: (user.profileImage != null &&
+                        user.profileImage.toString().isNotEmpty &&
+                        user.profileImage.toString() != "null")
+                    ? NetworkImage(
+                        "http://10.0.2.2:5000/${user.profileImage}?v=${DateTime.now().millisecondsSinceEpoch}")
+                    : const AssetImage("assets/images/default_profile.png")
+                        as ImageProvider,
                 child: imageState.isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : SizedBox(),
@@ -198,7 +200,8 @@ class ProfileScreen extends ConsumerWidget {
           ),
           child: Icon(icon, color: const Color(0xFF00D2A1)),
         ),
-        title: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        title: Text(label,
+            style: const TextStyle(fontSize: 12, color: Colors.grey)),
         subtitle: Text(
           value,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -212,7 +215,7 @@ class ProfileScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: OutlinedButton.icon(
-        onPressed: () => _handleLogout(context), // Call the handler here
+        onPressed: () => _handleLogout(context), 
         icon: const Icon(Icons.logout, color: Colors.red),
         label: const Text("Logout", style: TextStyle(color: Colors.red)),
         style: OutlinedButton.styleFrom(
@@ -226,9 +229,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  // Define the logic separately for cleaner code
   Future<void> _handleLogout(BuildContext context) async {
-    // 1. Show a confirmation dialog (Optional but recommended)
     final bool? shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -247,33 +248,23 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
 
-    // If user cancelled, stop here
     if (shouldLogout != true) return;
 
-    // 2. Perform your Authentication Logout Logic
     try {
-      // Example: await FirebaseAuth.instance.signOut();
-      // Example: await SharedPrefs.clearUserData();
-      
-      // Simulate a delay for visual feedback if needed
-      await Future.delayed(const Duration(milliseconds: 200)); 
-
+      await Future.delayed(const Duration(milliseconds: 200));
     } catch (e) {
-      // Handle errors (e.g., show a snackbar)
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Error logging out: $e')),
+          SnackBar(content: Text('Error logging out: $e')),
         );
       }
       return;
     }
-
-    // 3. Navigate to Login Screen and remove back stack
     if (context.mounted) {
-      // Replace '/login' with your actual login route name
       Navigator.of(context).pushNamedAndRemoveUntil(
-        '/login', 
-        (route) => false, // This predicate ensures all previous routes are removed
+        '/login',
+        (route) =>
+            false, 
       );
     }
   }
