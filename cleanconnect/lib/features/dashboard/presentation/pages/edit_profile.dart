@@ -13,8 +13,6 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
-
-  //Permission Request Logic
   Future<bool> _requestPermission(Permission permission) async {
     final status = await permission.status;
     if (status.isGranted) return true;
@@ -45,9 +43,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  //Fixed Picker Function
   Future<void> _pickImage(ImageSource source) async {
-    // Check permissions first
     Permission permission = (source == ImageSource.camera) 
         ? Permission.camera 
         : (Platform.isAndroid ? Permission.photos : Permission.photos);
@@ -74,8 +70,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       debugPrint("Error picking image: $e");
     }
   }
-
-  // 3. Fixed Bottom Sheet Function
   void _showImageSourceSheet() {
     showModalBottomSheet(
       context: context,
@@ -143,7 +137,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     backgroundColor: Colors.teal,
                     child: IconButton(
                       icon: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
-                      onPressed: _showImageSourceSheet, // Triggers the sheet now
+                      onPressed: _showImageSourceSheet, 
                     ),
                   ),
                 )

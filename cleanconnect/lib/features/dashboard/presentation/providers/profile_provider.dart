@@ -16,7 +16,7 @@ final profileProvider = FutureProvider.autoDispose<UserModel>((ref) async {
 
   try {
     final response = await apiClient.get(
-      '/users/profile', // Prefixed with base URL + /api/users in your client config
+      '/users/profile', 
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
@@ -27,8 +27,6 @@ final profileProvider = FutureProvider.autoDispose<UserModel>((ref) async {
 
     if (response.data['success'] == true) {
       final userData = response.data['data'];
-      
-      // Safety check: if data is a list, take the first entry to avoid type errors
       if (userData is List) {
         return UserModel.fromJson(userData[0]);
       }

@@ -15,17 +15,14 @@ class _SplashScreen1State extends State<SplashScreen1> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 3)).then((_) async {
-      // Check for auth token
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
       if (token != null && token.isNotEmpty) {
-        // Token exists, navigate to dashboard
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       } else {
-        // No token, go to onboarding
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const OnboardingScreen1()),
@@ -39,23 +36,18 @@ class _SplashScreen1State extends State<SplashScreen1> {
     return Scaffold(
       backgroundColor: const Color(
         0xFF5A98A3,
-      ), // Blue background similar to your design
+      ), 
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo Container
             SizedBox(
               width: 300,
               height: 300,
-              // decoration: BoxDecoration(
-              //   color: Colors.white,
-              //   borderRadius: BorderRadius.circular(40),
-              // ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Image.asset(
-                  "assets/images/image1.jpg", // replace with your file path
+                  "assets/images/image1.jpg", 
                   fit: BoxFit.contain,
                 ),
               ),
