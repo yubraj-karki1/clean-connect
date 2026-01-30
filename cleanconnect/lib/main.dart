@@ -1,4 +1,3 @@
-
 import 'package:cleanconnect/app/app.dart';
 import 'package:cleanconnect/core/services/hive/hive_service.dart';
 import 'package:cleanconnect/core/services/storage/user_session_service.dart';
@@ -17,7 +16,7 @@ void main() async {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sharedPrefs),
       ],
-      child: const App(), // ✅ use App, not MyApp
+      child: const App(), 
     ),
   );
 }

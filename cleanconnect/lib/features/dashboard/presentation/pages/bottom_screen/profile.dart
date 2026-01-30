@@ -86,7 +86,7 @@ class ProfileScreen extends ConsumerWidget {
         await ref
             .read(profileImageProvider(user.id).notifier)
             .uploadImage(File(image.path));
-        ref.refresh(profileProvider);
+        ref.invalidate(profileProvider);
       }
     }
 
