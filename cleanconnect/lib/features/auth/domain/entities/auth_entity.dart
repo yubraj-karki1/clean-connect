@@ -36,4 +36,6 @@ class AuthEntity extends Equatable {
     profilePicture,
     confirmPassword
   ];
+
+  get token => null;
 }

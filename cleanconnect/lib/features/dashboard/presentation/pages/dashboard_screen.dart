@@ -18,7 +18,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const Home(),
     const BookService(),
     const Favourite(),
-    const Profile(),
+    const ProfileScreen(),
   ];
 
   @override

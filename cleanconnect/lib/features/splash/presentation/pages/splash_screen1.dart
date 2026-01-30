@@ -1,5 +1,7 @@
+import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:cleanconnect/features/onboarding/presentation/pages/onboarding_screen1.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen1 extends StatefulWidget {
   const SplashScreen1({super.key});
@@ -11,14 +13,25 @@ class SplashScreen1 extends StatefulWidget {
 class _SplashScreen1State extends State<SplashScreen1> {
   @override
   void initState() {
-    Future.delayed(Duration(seconds: 3)).then(
-      (_) => Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => OnboardingScreen1()),
-      ),
-    );
-
     super.initState();
+    Future.delayed(const Duration(seconds: 3)).then((_) async {
+      // Check for auth token
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token != null && token.isNotEmpty) {
+        // Token exists, navigate to dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      } else {
+        // No token, go to onboarding
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const OnboardingScreen1()),
+        );
+      }
+    });
   }
 
   @override

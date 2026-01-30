@@ -4,8 +4,6 @@ class ApiEndpoints {
   // Base URL - change this for production
   // static const String baseUrl = 'http://192.168.:3000/api/v1';
   static const String baseUrl = 'http://10.0.2.2:5000/api';
-
-
   //static const String baseUrl = 'http://localhost:3000/api/v1';ip halna pardaina?
   // For Android Emulator use: 'http://10.0.2.2:3000/api/v1'
   // For iOS Simulator use: 'http://localhost:5000/api/v1'
@@ -17,5 +15,15 @@ class ApiEndpoints {
   static const String login = "/auth/login";
   static const String signup = "/auth/register";
    
+  // ========================= PHOTO (IMAGE) ENDPOINTS =========================
 
+  static const String uploadPhoto = "/media/photo/upload";
+  static const String uploadPhotos = "/media/photos/upload";
+  static const String getPhoto = "/media/photo";
+
+  // ========================= PHOTO URL HELPER =========================
+
+  static String photoUrl(String fileName) {
+    return "$baseUrl$getPhoto/$fileName";
+  }
 }
