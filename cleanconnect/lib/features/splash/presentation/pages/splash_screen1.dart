@@ -62,29 +62,6 @@ class _SplashScreen1State extends State<SplashScreen1> {
             ),
 
             const SizedBox(height: 0),
-
-            // // Title
-            // const Text(
-            //   "Clean Connect",
-            //   style: TextStyle(
-            //     fontSize: 40,
-            //     fontWeight: FontWeight.bold,
-            //     color: Colors.black,
-            //   ),
-            // ),
-
-            // const SizedBox(height: 6),
-
-            // Subtitle
-            // const Text(
-            //   "Your Home Services Export",
-            //   style: TextStyle(
-            //     fontSize: 20,
-            //     color: Colors.black87,
-            //   ),
-            // ),
-
-            // const SizedBox(height: 18),
           ],
         ),
       ),
