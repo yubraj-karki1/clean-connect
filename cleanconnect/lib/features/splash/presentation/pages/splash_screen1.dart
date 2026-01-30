@@ -85,15 +85,6 @@ class _SplashScreen1State extends State<SplashScreen1> {
             // ),
 
             // const SizedBox(height: 18),
-
-            // // Tagline
-            // const Text(
-            //   "Quick-Affordable-Trusted-Quality",
-            //   style: TextStyle(
-            //     fontSize: 18,
-            //     color: Colors.black87,
-            //   ),
-            // ),
           ],
         ),
       ),
