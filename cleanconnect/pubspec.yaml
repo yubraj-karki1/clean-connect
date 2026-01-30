@@ -241,6 +241,7 @@ dependencies:
 
   # Splash Screen
   flutter_native_splash: ^2.4.7
+  riverpod: ^3.2.0
 
 dev_dependencies:
   flutter_test:

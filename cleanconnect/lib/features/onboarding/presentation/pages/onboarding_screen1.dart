@@ -14,19 +14,7 @@ class OnboardingScreen1 extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Skip Button
-              // Align(
-              //   alignment: Alignment.topRight,
-              //   child: Text(
-              //     "Skip",
-              //     style: TextStyle(
-              //       color: Colors.black.withOpacity(1),
-              //       fontSize: 20,
-              //     ),
-              //   ),
-              // ),
               const SizedBox(height: 50),
-
               // Title Text
               const Text(
                 "Clean Home",
@@ -77,16 +65,15 @@ class OnboardingScreen1 extends StatelessWidget {
                       height: 55,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Add your onPressed action here
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const OnboardingScreen2()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white, // Button background color
+                          backgroundColor: Colors.white, 
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(40), // Rounded edges
+                            borderRadius: BorderRadius.circular(40), 
                           ),
                         ),
                         child: const Text(
