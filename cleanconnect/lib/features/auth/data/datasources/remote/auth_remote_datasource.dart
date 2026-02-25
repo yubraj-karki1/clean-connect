@@ -41,17 +41,17 @@ Future<AuthApiModel> login(String email, String password) async {
     );
 
     if (response.statusCode == 200 && response.data['success'] == true) {
-      // ✅ FIXED: The backend sends { data: { token: "...", user: {...} } }
-      // So you must access response.data['data']['token']
-      final token = response.data['data']['token']; 
+      // Token is at the top level of the response
+      final token = response.data['token'];
 
       if (token != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
       }
 
-      // ✅ FIXED: Access the user object inside the data object
-      final userData = response.data['data']['user'] as Map<String, dynamic>;
+      // 'data' IS the user object directly (not data.user)
+      final userData = response.data['data'] as Map<String, dynamic>?
+          ?? <String, dynamic>{};
       final user = AuthApiModel.fromJson(userData);
 
       await _userSessionService.saveUserSession(

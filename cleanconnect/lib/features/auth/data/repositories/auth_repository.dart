@@ -29,7 +29,7 @@ class AuthRepository implements IAuthRepository {
   final IAuthRemoteDataSource _authRemoteDataSource;
   final NetworkInfo _networkInfo;
 
-  AuthRepository({
+  AuthRepository({ 
     required IAuthLocalDataSource authDatasource,
     required IAuthRemoteDataSource authRemoteDataSource,
     required NetworkInfo networkInfo,

@@ -21,6 +21,13 @@ class ApiEndpoints {
   static const String uploadPhotos = "/media/photos/upload";
   static const String getPhoto = "/media/photo";
 
+  // ========================= BOOKING ENDPOINTS =========================
+
+  static const String services = "/bookings/services";
+  static const String createBooking = "/bookings";
+  static const String myBookings = "/bookings/me";
+  static String deleteBooking(String id) => "/bookings/$id";
+
   // ========================= PHOTO URL HELPER =========================
 
   static String photoUrl(String fileName) {

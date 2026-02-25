@@ -4,6 +4,7 @@ import 'package:cleanconnect/features/dashboard/presentation/providers/profile_p
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -251,7 +252,16 @@ class ProfileScreen extends ConsumerWidget {
     if (shouldLogout != true) return;
 
     try {
-      await Future.delayed(const Duration(milliseconds: 200));
+      // Clear auth token
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('auth_token');
+      await prefs.remove('is_logged_in');
+      await prefs.remove('user_id');
+      await prefs.remove('user_email');
+      await prefs.remove('user_full_name');
+      await prefs.remove('user_address');
+      await prefs.remove('user_phone_number');
+      await prefs.remove('user_profile_picture');
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

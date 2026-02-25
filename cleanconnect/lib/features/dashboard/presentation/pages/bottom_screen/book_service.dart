@@ -1,319 +1,369 @@
-import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
+import 'package:cleanconnect/core/api/api_client.dart';
+import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
-class BookService extends StatefulWidget {
+class BookService extends ConsumerWidget {
   const BookService({super.key});
 
   @override
-  State<BookService> createState() => _BookServiceScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookingsAsync = ref.watch(myBookingsProvider);
 
-class _BookServiceScreenState extends State<BookService> {
-  final TextEditingController dateController = TextEditingController();
-  final TextEditingController timeController = TextEditingController();
-  final TextEditingController addressController = TextEditingController();
-  String selectedService = "Home Cleaning";
-  String selectedDuration = "2 hours";
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // HEADER SECTION
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-              decoration: const BoxDecoration(
-                color: Color(0xFF61A8C7),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(40),
-                  bottomRight: Radius.circular(40),
+      backgroundColor: const Color(0xFFF7F7F7),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(myBookingsProvider);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // HEADER SECTION
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF00C9A7), Color(0xFF61A8C7)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.calendar_today, color: Colors.white, size: 32),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          "My Bookings",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          "Manage your appointments",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                     onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context)=> const DashboardScreen())
-                      );
-                  },
+
+              // BOOKING CONTENT
+              bookingsAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.only(top: 80),
+                  child: Center(child: CircularProgressIndicator(color: Color(0xFF00C9A7))),
+                ),
+                error: (error, _) => Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                        const SizedBox(height: 12),
+                        Text(
+                          error.toString().replaceFirst('Exception: ', ''),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: () => ref.invalidate(myBookingsProvider),
+                          child: const Text("Retry"),
+                        ),
+                      ],
                     ),
                   ),
-                  const Center(
-                    child: Text(
-                      "Book a Service",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
+                ),
+                data: (bookings) {
+                  final upcoming = bookings
+                      .where((b) => b.status != 'completed' && b.status != 'cancelled')
+                      .toList();
+                  final past = bookings
+                      .where((b) => b.status == 'completed' || b.status == 'cancelled')
+                      .toList();
+
+                  return Column(
+                    children: [
+                      // UPCOMING SECTION
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Upcoming",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[900],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  )
-                ],
+                      if (upcoming.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                "No upcoming bookings",
+                                style: TextStyle(fontSize: 15, color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ...upcoming.map((b) => Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: _buildBookingCard(b, ref, context),
+                            )),
+
+                      // PAST SECTION
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Past",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[900],
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (past.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                "No past bookings",
+                                style: TextStyle(fontSize: 15, color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ...past.map((b) => Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: _buildBookingCard(b, ref, context),
+                            )),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-            // BODY INPUTS
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  
-                  // Select Service
-                  const Text(
-                    "Select Service Type",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 10),
+  Widget _buildBookingCard(BookingItem booking, WidgetRef ref, BuildContext context) {
+    final dateStr = DateFormat('EEE, MMM d').format(booking.startAt);
+    final timeStr = DateFormat('h:mm a').format(booking.startAt);
+    final statusLabel = booking.status.replaceAll('_', ' ');
+    final capitalizedStatus =
+        statusLabel[0].toUpperCase() + statusLabel.substring(1);
 
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedService,
-                    decoration: const InputDecoration(border: InputBorder.none),
-                    items: const [
-                      DropdownMenuItem(
-                        value: "Home Cleaning",
-                        child: Row(
-                          children: [
-                            Icon(Icons.home, color: Colors.orange),
-                            SizedBox(width: 8),
-                            Text("Home Cleaning"),
-                          ],
+    Color statusColor;
+    switch (booking.status) {
+      case 'confirmed':
+      case 'assigned':
+        statusColor = const Color(0xFF00C9A7);
+        break;
+      case 'completed':
+        statusColor = const Color(0xFFE0E0E0);
+        break;
+      case 'cancelled':
+        statusColor = Colors.redAccent.withOpacity(0.2);
+        break;
+      default: // pending_payment
+        statusColor = const Color(0xFFFFD600);
+    }
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        booking.serviceTitle ?? 'Cleaning Service',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
                       ),
-                      DropdownMenuItem(
-                        value: "Office Cleaning",
-                        child: Row(
-                          children: [
-                            Icon(Icons.home_max, color: Colors.orange),
-                            SizedBox(width: 8),
-                            Text("Office Cleaning"),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: "Window Cleaning",
-                        child: Row(
-                          children: [
-                            Icon(Icons.window, color: Colors.orange),
-                            SizedBox(width: 8),
-                            Text("Window Cleaning"),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: "Carpet Cleaning",
-                        child: Row(
-                          children: [
-                            Icon(Icons.local_laundry_service, color: Colors.orange),
-                            SizedBox(width: 8),
-                            Text("Carpet Cleaning"),
-                          ],
-                          
+                      Text(
+                        "${booking.durationHours.toStringAsFixed(0)} hour(s)",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
-                    onChanged: (value) {
-                      setState(() {
-                        selectedService = value!;
-                      });
-                    },
                   ),
-
-                  const SizedBox(height: 25),
-
-                 /// Choose Date
-                  // const Text("Choose Date"),
-                  // const SizedBox(height: 8),
-                  // TextFormField(
-                  //   controller: dateController,
-                  //   readOnly: true,
-                  //   decoration: InputDecoration(
-                  //     hintText: "mm/dd/yyyy",
-                  //     suffixIcon: Icon(Icons.calendar_today_outlined),
-                  //     border: OutlineInputBorder(
-                  //       borderRadius: BorderRadius.circular(10),
-                  //     ),
-                  //   ),
-                  //   onTap: () async {
-                  //     DateTime? pickedDate = await showDatePicker(
-                  //       context: context,
-                  //       initialDate: DateTime.now(),
-                  //       firstDate: DateTime(2020),
-                  //       lastDate: DateTime(2100),
-                  //     );
-      
-                  //     if (pickedDate != null) {
-                  //       dateController.text =
-                  //           "${pickedDate.month}/${pickedDate.day}/${pickedDate.year}";
-                  //     }
-                  //   },
-                  // ),
-
-                  // const SizedBox(height: 25),
-
-                  // /// Choose Time
-                  //  const Text("Choose Time"),
-                  //  const SizedBox(height: 8),
-                  //  TextFormField(
-                  //    controller: timeController,
-                  //    readOnly: true,
-                  //    decoration: InputDecoration(
-                  //      hintText: "--:-- --",
-                  //      suffixIcon: Icon(Icons.access_time),
-                  //      border: OutlineInputBorder(
-                  //        borderRadius: BorderRadius.circular(10),
-                  //      ),
-                  //    ),
-                  //    onTap: () async {
-                  //      TimeOfDay? pickedTime = await showTimePicker(
-                  //        context: context,
-                  //        initialTime: TimeOfDay.now(),
-                  //      );
-
-                  //      if (pickedTime != null) {
-                  //        timeController.text = pickedTime.format(context);
-                  //      }
-                  //    },
-                  //  ),
-
-                  // const SizedBox(height: 25),
-
-                  // /// Service Address
-                  // const Text("Service Address"),
-                  // const SizedBox(height: 8),
-                  // TextFormField(
-                  //   controller: addressController,
-                  //   decoration: InputDecoration(
-                  //     hintText: "Enter your address",
-                  //     suffixIcon: Icon(Icons.location_on_outlined),
-                  //     border: OutlineInputBorder(
-                  //       borderRadius: BorderRadius.circular(10),
-                  //           ),
-                  //         ),
-                  //       ),
-
-                  // const SizedBox(height: 25),
-
-                  // // Duration
-                  // const Text("Duration (Hours)",
-                  //     style: TextStyle(fontWeight: FontWeight.w600)),
-                  // const SizedBox(height: 5),
-                  // DropdownButtonFormField<String>(
-                  //   value: selectedDuration,
-                  //   decoration: const InputDecoration(border: InputBorder.none),
-                  //   items: const [
-                  //     DropdownMenuItem(
-                  //       value: "2 hours",
-                  //       child: Text("2 hours"),
-                  //     ),
-                  //     DropdownMenuItem(
-                  //       value: "3 hours",
-                  //       child: Text("3 hours"),
-                  //     ),
-                  //   ],
-                  //   onChanged: (value) {
-                  //     setState(() {
-                  //       selectedDuration = value!;
-                  //     });
-                  //   },
-                  // ),
-
-                  // const SizedBox(height: 25),
-
-                  // // PRICE BREAKDOWN BOX
-                  // Container(
-                  //   width: double.infinity,
-                  //   padding: const EdgeInsets.all(15),
-                  //   decoration: BoxDecoration(
-                  //     color: const Color(0xFFD1F2F5),
-                  //     borderRadius: BorderRadius.circular(12),
-                  //   ),
-                  //   child: Column(
-                  //     crossAxisAlignment: CrossAxisAlignment.start,
-                  //     children: const [
-                  //       Text(
-                  //         "💲 Price Breakdown",
-                  //         style: TextStyle(
-                  //           fontWeight: FontWeight.bold,
-                  //           fontSize: 16,
-                  //         ),
-                  //       ),
-                  //       SizedBox(height: 10),
-
-                  //       Row(
-                  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //         children: [
-                  //           Text("Hourly rate"),
-                  //           Text("\$35/hr"),
-                  //         ],
-                  //       ),
-                  //       SizedBox(height: 5),
-
-                  //       Row(
-                  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //         children: [
-                  //           Text("Duration"),
-                  //           Text("2 hour(s)"),
-                  //         ],
-                  //       ),
-
-                  //       Divider(),
-
-                  //       Row(
-                  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //         children: [
-                  //           Text(
-                  //             "Total",
-                  //             style: TextStyle(
-                  //                 fontWeight: FontWeight.bold, fontSize: 18),
-                  //           ),
-                  //           Text(
-                  //             "\$70",
-                  //             style: TextStyle(
-                  //                 fontWeight: FontWeight.bold, fontSize: 18),
-                  //           ),
-                  //         ],
-                  //       ),
-                  //     ],
-                  //   ),
-                  // ),
-
-                  const SizedBox(height: 550),
-
-                  // Confirm Booking Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF61A8C7),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                      ),
-                      child: const Text(
-                        "Confirm Booking",
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                        title: const Text("Delete Booking"),
+                        content: const Text(
+                          "Are you sure you want to delete this booking? This action cannot be undone.",
                         ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text("Cancel"),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              try {
+                                final apiClient = ref.read(apiClientProvider);
+                                await deleteBooking(
+                                  apiClient: apiClient,
+                                  bookingId: booking.id,
+                                );
+                                ref.invalidate(myBookingsProvider);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Booking deleted"),
+                                      backgroundColor: Color(0xFF00C9A7),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        e.toString().replaceFirst('Exception: ', ''),
+                                      ),
+                                      backgroundColor: Colors.redAccent,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            child: const Text(
+                              "Delete",
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
+                          ),
+                        ],
                       ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(dateStr,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 18, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(timeStr,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    capitalizedStatus,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
                     ),
                   ),
-
-                ],
-              ),
+                ),
+                Text(
+                  "\$${booking.total.toStringAsFixed(0)}",
+                  style: const TextStyle(
+                    color: Color(0xFF00C9A7),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
