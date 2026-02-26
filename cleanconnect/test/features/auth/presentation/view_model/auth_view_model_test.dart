@@ -34,6 +34,7 @@ void main() {
       RegisterUsecaseParams(
         fullName: '',
         email: '',
+        role: 'customer',
         password: '',
         address: '',
         profilePicture: '',
@@ -132,6 +133,7 @@ void main() {
       await container.read(authViewModelProvider.notifier).register(
             fullName: 'New User',
             email: 'new@gmail.com',
+            role: 'customer',
             password: 'password',
             address: 'Kathmandu',
             profilePicture: 'profile.png',
@@ -154,6 +156,7 @@ void main() {
       await container.read(authViewModelProvider.notifier).register(
             fullName: 'User',
             email: 'duplicate@gmail.com',
+            role: 'worker',
             password: 'password',
             address: 'Kathmandu',
             profilePicture: 'profile.png',

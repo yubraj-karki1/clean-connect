@@ -9,19 +9,40 @@ class BookService extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookingsAsync = ref.watch(myBookingsProvider);
+    final roleAsync = ref.watch(userRoleProvider);
+
+    return roleAsync.when(
+      loading: () => const Scaffold(
+        backgroundColor: Color(0xFFF7F7F7),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF00C9A7))),
+      ),
+      error: (_, __) => _buildBookingsScaffold(context, ref, false),
+      data: (role) => _buildBookingsScaffold(context, ref, role == 'worker'),
+    );
+  }
+
+  Widget _buildBookingsScaffold(BuildContext context, WidgetRef ref, bool isWorker) {
+    final bookingsAsync = ref.watch(isWorker ? myWorkerWorkProvider : myBookingsProvider);
+    final workerCustomerBookingsAsync =
+        isWorker ? ref.watch(workerCustomerBookingsProvider) : null;
+    final heading = isWorker ? "My Work" : "My Bookings";
+    final subtitle = isWorker ? "Your assigned jobs" : "Manage your appointments";
+    final upcomingEmpty = isWorker ? "No assigned active jobs" : "No upcoming bookings";
+    final pastEmpty = isWorker ? "No completed jobs yet" : "No past bookings";
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(myBookingsProvider);
+          ref.invalidate(isWorker ? myWorkerWorkProvider : myBookingsProvider);
+          if (isWorker) {
+            ref.invalidate(workerCustomerBookingsProvider);
+          }
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              // HEADER SECTION
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
@@ -50,19 +71,19 @@ class BookService extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          "My Bookings",
-                          style: TextStyle(
+                          heading,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "Manage your appointments",
-                          style: TextStyle(
+                          subtitle,
+                          style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 16,
                           ),
@@ -72,8 +93,6 @@ class BookService extends ConsumerWidget {
                   ],
                 ),
               ),
-
-              // BOOKING CONTENT
               bookingsAsync.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.only(top: 80),
@@ -93,7 +112,7 @@ class BookService extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         TextButton(
-                          onPressed: () => ref.invalidate(myBookingsProvider),
+                          onPressed: () => ref.invalidate(isWorker ? myWorkerWorkProvider : myBookingsProvider),
                           child: const Text("Retry"),
                         ),
                       ],
@@ -110,13 +129,12 @@ class BookService extends ConsumerWidget {
 
                   return Column(
                     children: [
-                      // UPCOMING SECTION
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            "Upcoming",
+                            isWorker ? "Active Jobs" : "Upcoming",
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -135,10 +153,10 @@ class BookService extends ConsumerWidget {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                "No upcoming bookings",
-                                style: TextStyle(fontSize: 15, color: Colors.grey),
+                                upcomingEmpty,
+                                style: const TextStyle(fontSize: 15, color: Colors.grey),
                               ),
                             ),
                           ),
@@ -146,16 +164,14 @@ class BookService extends ConsumerWidget {
                       else
                         ...upcoming.map((b) => Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              child: _buildBookingCard(b, ref, context),
+                              child: _buildBookingCard(b, ref, context, isWorker: isWorker),
                             )),
-
-                      // PAST SECTION
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            "Past",
+                            isWorker ? "Job History" : "Past",
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -174,10 +190,10 @@ class BookService extends ConsumerWidget {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                "No past bookings",
-                                style: TextStyle(fontSize: 15, color: Colors.grey),
+                                pastEmpty,
+                                style: const TextStyle(fontSize: 15, color: Colors.grey),
                               ),
                             ),
                           ),
@@ -185,8 +201,14 @@ class BookService extends ConsumerWidget {
                       else
                         ...past.map((b) => Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              child: _buildBookingCard(b, ref, context),
+                              child: _buildBookingCard(b, ref, context, isWorker: isWorker),
                             )),
+                      if (isWorker && workerCustomerBookingsAsync != null)
+                        _buildCustomerBookedSection(
+                          context,
+                          ref,
+                          workerCustomerBookingsAsync,
+                        ),
                       const SizedBox(height: 24),
                     ],
                   );
@@ -199,7 +221,91 @@ class BookService extends ConsumerWidget {
     );
   }
 
-  Widget _buildBookingCard(BookingItem booking, WidgetRef ref, BuildContext context) {
+  Widget _buildCustomerBookedSection(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<BookingItem>> customerBookingsAsync,
+  ) {
+    return customerBookingsAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.only(top: 8),
+        child: CircularProgressIndicator(color: Color(0xFF00C9A7)),
+      ),
+      error: (_, __) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Failed to load customer booked jobs",
+                style: TextStyle(color: Colors.redAccent),
+              ),
+              TextButton(
+                onPressed: () => ref.invalidate(workerCustomerBookingsProvider),
+                child: const Text("Retry customer booked jobs"),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (customerBookings) {
+        final pendingCustomerJobs = customerBookings
+            .where((b) => b.status != 'completed' && b.status != 'cancelled')
+            .toList();
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Customer Booked Jobs",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[900],
+                  ),
+                ),
+              ),
+            ),
+            if (pendingCustomerJobs.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "No additional customer bookings",
+                      style: TextStyle(fontSize: 15, color: Colors.grey),
+                    ),
+                  ),
+                ),
+              )
+            else
+              ...pendingCustomerJobs.map((b) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: _buildBookingCard(b, ref, context, isWorker: true),
+                  )),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBookingCard(
+    BookingItem booking,
+    WidgetRef ref,
+    BuildContext context, {
+    required bool isWorker,
+  }) {
     final dateStr = DateFormat('EEE, MMM d').format(booking.startAt);
     final timeStr = DateFormat('h:mm a').format(booking.startAt);
     final statusLabel = booking.status.replaceAll('_', ' ');
@@ -256,67 +362,82 @@ class BookService extends ConsumerWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        title: const Text("Delete Booking"),
-                        content: const Text(
-                          "Are you sure you want to delete this booking? This action cannot be undone.",
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text("Cancel"),
+                if (!isWorker)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          TextButton(
-                            onPressed: () async {
-                              Navigator.pop(ctx);
-                              try {
-                                final apiClient = ref.read(apiClientProvider);
-                                await deleteBooking(
-                                  apiClient: apiClient,
-                                  bookingId: booking.id,
-                                );
-                                ref.invalidate(myBookingsProvider);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Booking deleted"),
-                                      backgroundColor: Color(0xFF00C9A7),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        e.toString().replaceFirst('Exception: ', ''),
-                                      ),
-                                      backgroundColor: Colors.redAccent,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                            child: const Text(
-                              "Delete",
-                              style: TextStyle(color: Colors.redAccent),
+                          title: const Text("Delete Booking"),
+                          content: const Text(
+                            "Are you sure you want to delete this booking? This action cannot be undone.",
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text("Cancel"),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                            TextButton(
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                try {
+                                  final apiClient = ref.read(apiClientProvider);
+                                  await deleteBooking(
+                                    apiClient: apiClient,
+                                    bookingId: booking.id,
+                                  );
+                                  ref.invalidate(myBookingsProvider);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Booking deleted"),
+                                        backgroundColor: Color(0xFF00C9A7),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          e.toString().replaceFirst('Exception: ', ''),
+                                        ),
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              child: const Text(
+                                "Delete",
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
+            if (isWorker && booking.customerName != null && booking.customerName!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                "Customer: ${booking.customerName}",
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+            ],
+            if (isWorker && booking.addressLine1 != null && booking.addressLine1!.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                booking.addressLine1!,
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+            ],
             const SizedBox(height: 8),
             Row(
               children: [
@@ -365,9 +486,72 @@ class BookService extends ConsumerWidget {
                 ),
               ],
             ),
+            if (_canWorkerAcceptBooking(isWorker, booking)) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final apiClient = ref.read(apiClientProvider);
+                      await acceptBookingForWorker(
+                        apiClient: apiClient,
+                        bookingId: booking.id,
+                      );
+                      ref.invalidate(myWorkerWorkProvider);
+                      ref.invalidate(workerCustomerBookingsProvider);
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Job accepted successfully"),
+                            backgroundColor: Color(0xFF00C9A7),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              e.toString().replaceFirst('Exception: ', ''),
+                            ),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.check_circle_outline, size: 18),
+                  label: const Text("Accept Job"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C9A7),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  bool _canWorkerAcceptBooking(bool isWorker, BookingItem booking) {
+    if (!isWorker) return false;
+    final hasAssignedWorker = (booking.workerId ?? '').isNotEmpty;
+    if (hasAssignedWorker) return false;
+
+    const acceptableStatuses = {
+      'pending',
+      'pending_payment',
+      'confirmed',
+      'open',
+      'available',
+    };
+    return acceptableStatuses.contains(booking.status);
   }
 }

@@ -1,4 +1,5 @@
-import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/customer_dashboard_page.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/worker_dashboard_page.dart';
 import 'package:cleanconnect/features/onboarding/presentation/pages/onboarding_screen1.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,10 +18,14 @@ class _SplashScreen1State extends State<SplashScreen1> {
     Future.delayed(const Duration(seconds: 3)).then((_) async {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
+      final role = (prefs.getString('user_role') ?? 'customer').toLowerCase();
       if (token != null && token.isNotEmpty) {
+        final page = role == 'worker'
+            ? const WorkerDashboardPage()
+            : const CustomerDashboardPage();
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          MaterialPageRoute(builder: (_) => page),
         );
       } else {
         Navigator.pushReplacement(

@@ -259,6 +259,7 @@ class ProfileScreen extends ConsumerWidget {
       await prefs.remove('user_id');
       await prefs.remove('user_email');
       await prefs.remove('user_full_name');
+      await prefs.remove('user_role');
       await prefs.remove('user_address');
       await prefs.remove('user_phone_number');
       await prefs.remove('user_profile_picture');

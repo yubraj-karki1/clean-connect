@@ -3,6 +3,7 @@ import 'package:cleanconnect/features/dashboard/presentation/pages/bottom_screen
 import 'package:cleanconnect/features/dashboard/presentation/pages/bottom_screen/home.dart';
 import 'package:cleanconnect/features/dashboard/presentation/pages/bottom_screen/favourite.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int initialIndex;
@@ -14,11 +15,27 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late int _selectedIndex;
+  bool _isWorker = false;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    final role = (prefs.getString('user_role') ?? '').toLowerCase();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _isWorker = role == 'worker';
+      if (_isWorker && _selectedIndex == 0) {
+        _selectedIndex = 1;
+      }
+    });
   }
 
   List<Widget> LstBottomScreen = [
@@ -34,20 +51,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: LstBottomScreen[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: 'Home'
           ),
           BottomNavigationBarItem(
           icon: Icon(Icons.book_online),
-          label: 'Bookings'
+          label: _isWorker ? 'My Work' : 'Bookings'
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
           icon: Icon(Icons.favorite),
           label: 'Favourites'
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'Profile'
           ),

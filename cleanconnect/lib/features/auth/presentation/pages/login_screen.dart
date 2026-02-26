@@ -3,8 +3,9 @@ import 'package:cleanconnect/core/utils/snackbar_utils.dart';
 import 'package:cleanconnect/features/auth/presentation/pages/signup_screen.dart';
 import 'package:cleanconnect/features/auth/presentation/state/auth_state.dart';
 import 'package:cleanconnect/features/auth/presentation/view_model/auth_view_model.dart';
-import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/customer_dashboard_page.dart';
 import 'package:cleanconnect/features/dashboard/presentation/pages/forgot_screen.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/worker_dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,7 +48,12 @@ Widget build(BuildContext context) {
         context, 
         'Login successful! Welcome back.',
       );
-      AppRoutes.pushReplacement(context, const DashboardScreen());
+      final role = (next.user?.role ?? 'customer').toLowerCase();
+      if (role == 'worker') {
+        AppRoutes.pushReplacement(context, const WorkerDashboardPage());
+      } else {
+        AppRoutes.pushReplacement(context, const CustomerDashboardPage());
+      }
     } 
       else if (next.status == AuthStatus.error && next.errorMessage != null) {
       SnackbarUtils.showError(

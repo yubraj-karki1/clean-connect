@@ -1,0 +1,805 @@
+import 'package:cleanconnect/core/api/api_client.dart';
+import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
+import 'package:cleanconnect/features/dashboard/presentation/providers/profile_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class WorkerDashboardPage extends ConsumerStatefulWidget {
+  const WorkerDashboardPage({super.key});
+
+  @override
+  ConsumerState<WorkerDashboardPage> createState() =>
+      _WorkerDashboardPageState();
+}
+
+class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
+  int _menuIndex = 0;
+  int _myJobsTab = 0;
+  String _searchQuery = '';
+  String _serviceFilter = 'All Jobs';
+  final TextEditingController _searchController = TextEditingController();
+  final Map<String, BookingItem> _optimisticAcceptedJobs = {};
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final availableAsync = ref.watch(workerCustomerBookingsProvider);
+    final myJobsAsync = ref.watch(myWorkerWorkProvider);
+    final profileAsync = ref.watch(profileProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7F9),
+      appBar: isMobile
+          ? AppBar(
+              elevation: 0,
+              backgroundColor: Colors.white,
+              iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+              title: const Text('Worker Portal',
+                  style: TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700)),
+              actions: [
+                IconButton(
+                    onPressed: _handleLogout,
+                    icon: const Icon(Icons.logout, color: Colors.red)),
+              ],
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child:
+                  SafeArea(child: _buildSidebar(profileAsync, isMobile: true)))
+          : null,
+      body: SafeArea(
+        top: !isMobile,
+        child: Row(
+          children: [
+            if (!isMobile) _buildSidebar(profileAsync, isMobile: false),
+            Expanded(
+              child: Column(
+                children: [
+                  if (!isMobile) _buildTopBar(),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(isMobile ? 12 : 16),
+                      child: _menuIndex == 0
+                          ? _buildAvailableJobs(availableAsync,
+                              isMobile: isMobile)
+                          : _buildMyJobs(myJobsAsync, isMobile: isMobile),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebar(AsyncValue<dynamic> profileAsync,
+      {required bool isMobile}) {
+    final initials = profileAsync.when(
+      loading: () => 'W',
+      error: (_, __) => 'W',
+      data: (user) {
+        final name = (user.fullName ?? '').toString().trim();
+        if (name.isEmpty) return 'W';
+        final parts = name.split(RegExp(r'\s+'));
+        if (parts.length == 1) return parts.first[0].toUpperCase();
+        return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+      },
+    );
+
+    return Container(
+      width: isMobile ? double.infinity : 210,
+      decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(right: BorderSide(color: Color(0xFFE7EBEF)))),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(14, 18, 14, 14),
+            decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFEFF2F4)))),
+            child: const Row(
+              children: [
+                CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Color(0xFFDFF7EF),
+                    child: Icon(Icons.cleaning_services,
+                        size: 16, color: Color(0xFF0BAA83))),
+                SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('CleanConnect',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 13)),
+                    Text('Worker Portal',
+                        style:
+                            TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          _menuTile(Icons.search, 'Available Jobs', _menuIndex == 0, () {
+            setState(() => _menuIndex = 0);
+            if (isMobile) Navigator.of(context).pop();
+          }),
+          _menuTile(Icons.work_outline, 'My Jobs', _menuIndex == 1, () {
+            setState(() => _menuIndex = 1);
+            if (isMobile) Navigator.of(context).pop();
+          }),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                    radius: 14,
+                    backgroundColor: const Color(0xFF1F2937),
+                    child: Text(initials,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 11))),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: _handleLogout,
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  icon: const Icon(Icons.logout, size: 16, color: Colors.red),
+                  label: const Text('Logout',
+                      style: TextStyle(color: Colors.red, fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _menuTile(
+      IconData icon, String label, bool selected, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFFE4F8F0) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: const Color(0xFF374151)),
+              const SizedBox(width: 10),
+              Text(label,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w500, fontSize: 14)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Container(
+      height: 56,
+      decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(bottom: BorderSide(color: Color(0xFFE7EBEF)))),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: TextButton.icon(
+            onPressed: _handleLogout,
+            icon: const Icon(Icons.logout, size: 16, color: Colors.red),
+            label: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvailableJobs(AsyncValue<List<BookingItem>> availableAsync,
+      {required bool isMobile}) {
+    return availableAsync.when(
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF00C9A7))),
+      error: (error, _) => _errorView(
+          error.toString().replaceFirst('Exception: ', ''),
+          () => ref.invalidate(workerCustomerBookingsProvider)),
+      data: (jobs) {
+        final openJobs = jobs
+            .where((e) => e.status != 'completed' && e.status != 'cancelled')
+            .where((e) => !_optimisticAcceptedJobs.containsKey(e.id))
+            .toList();
+        final serviceGroups = <String, int>{};
+        for (final j in openJobs) {
+          final key = j.serviceTitle?.trim().isNotEmpty == true
+              ? j.serviceTitle!.trim()
+              : 'Cleaning Service';
+          serviceGroups[key] = (serviceGroups[key] ?? 0) + 1;
+        }
+        final filtered = openJobs.where((b) {
+          final title = (b.serviceTitle ?? 'Cleaning Service').toLowerCase();
+          final location = (b.addressLine1 ?? '').toLowerCase();
+          final queryOk = _searchQuery.trim().isEmpty ||
+              title.contains(_searchQuery.toLowerCase()) ||
+              location.contains(_searchQuery.toLowerCase());
+          final serviceOk = _serviceFilter == 'All Jobs' ||
+              (b.serviceTitle ?? 'Cleaning Service') == _serviceFilter;
+          return queryOk && serviceOk;
+        }).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _heroCard(openJobs.length, serviceGroups.length, isMobile),
+            const SizedBox(height: 16),
+            Text('Cleaning Services',
+                style: TextStyle(
+                    fontSize: isMobile ? 18 : 24, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _serviceChip(
+                      'All Jobs',
+                      openJobs.length,
+                      _serviceFilter == 'All Jobs',
+                      () => setState(() => _serviceFilter = 'All Jobs')),
+                  const SizedBox(width: 8),
+                  ...serviceGroups.entries.map((e) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: _serviceChip(
+                            e.key,
+                            e.value,
+                            _serviceFilter == e.key,
+                            () => setState(() => _serviceFilter = e.key)),
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (isMobile) ...[
+              TextField(
+                  controller: _searchController,
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                  decoration: _searchDecoration()),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      ref.invalidate(workerCustomerBookingsProvider),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Refresh'),
+                  style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(96, 48),
+                      side: const BorderSide(color: Color(0xFFCBD5E1))),
+                ),
+              ),
+            ] else
+              Row(
+                children: [
+                  Expanded(
+                      child: TextField(
+                          controller: _searchController,
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                          decoration: _searchDecoration())),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        ref.invalidate(workerCustomerBookingsProvider),
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Refresh'),
+                    style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(96, 48),
+                        side: const BorderSide(color: Color(0xFFCBD5E1))),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 14),
+            Text('Showing ${filtered.length} jobs',
+                style: const TextStyle(color: Color(0xFF475569))),
+            const SizedBox(height: 10),
+            Expanded(
+              child: filtered.isEmpty
+                  ? const Center(
+                      child: Text('No jobs found',
+                          style: TextStyle(
+                              color: Color(0xFF64748B), fontSize: 16)))
+                  : LayoutBuilder(
+                      builder: (context, c) {
+                        final crossAxisCount = c.maxWidth > 1400
+                            ? 3
+                            : c.maxWidth > 980
+                                ? 2
+                                : 1;
+                        if (crossAxisCount == 1) {
+                          return ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) => _jobCard(
+                                filtered[index],
+                                canAccept: true,
+                                compact: isMobile),
+                          );
+                        }
+                        return GridView.builder(
+                          itemCount: filtered.length,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  childAspectRatio: 1.8),
+                          itemBuilder: (context, index) =>
+                              _jobCard(filtered[index], canAccept: true),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMyJobs(AsyncValue<List<BookingItem>> myJobsAsync,
+      {required bool isMobile}) {
+    return myJobsAsync.when(
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF00C9A7))),
+      error: (error, _) => _errorView(
+          error.toString().replaceFirst('Exception: ', ''),
+          () => ref.invalidate(myWorkerWorkProvider)),
+      data: (jobs) {
+        final merged = <String, BookingItem>{};
+        for (final b in jobs) {
+          merged[b.id] = b;
+        }
+        for (final b in _optimisticAcceptedJobs.values) {
+          merged[b.id] = b;
+        }
+        final allJobs = merged.values.toList();
+
+        final active = allJobs
+            .where((b) => b.status != 'completed' && b.status != 'cancelled')
+            .toList();
+        final completed =
+            allJobs.where((b) => b.status == 'completed').toList();
+        final visible = _myJobsTab == 0 ? active : completed;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('My Jobs',
+                style: TextStyle(
+                    fontSize: isMobile ? 30 : 38, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            const Text('Jobs you\'ve accepted - track and complete them here.',
+                style: TextStyle(color: Color(0xFF64748B))),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _togglePill('Active', active.length, _myJobsTab == 0,
+                    () => setState(() => _myJobsTab = 0)),
+                _togglePill('Completed', completed.length, _myJobsTab == 1,
+                    () => setState(() => _myJobsTab = 1)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: visible.isEmpty
+                  ? Center(
+                      child: Text(
+                          _myJobsTab == 0
+                              ? 'No active jobs'
+                              : 'No completed jobs',
+                          style: const TextStyle(
+                              color: Color(0xFF64748B), fontSize: 16)))
+                  : ListView.separated(
+                      itemCount: visible.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) => _jobCard(visible[index],
+                          canAccept: false,
+                          showMarkComplete: _myJobsTab == 0,
+                          compact: isMobile),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  InputDecoration _searchDecoration() {
+    return InputDecoration(
+      hintText: 'Search by service or location...',
+      prefixIcon: const Icon(Icons.search, size: 18),
+      suffixIcon: _searchQuery.isEmpty
+          ? null
+          : IconButton(
+              icon: const Icon(Icons.close, size: 16),
+              onPressed: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+            ),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFD9DFE6))),
+      filled: true,
+      fillColor: Colors.white,
+    );
+  }
+
+  Widget _serviceChip(
+      String label, int count, bool selected, VoidCallback onTap) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(
+            color:
+                selected ? const Color(0xFF0BB587) : const Color(0xFFD6DEE6)),
+        backgroundColor: selected ? const Color(0xFFE7F9F3) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: Row(
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+          const SizedBox(width: 8),
+          CircleAvatar(
+            radius: 10,
+            backgroundColor: const Color(0xFFE8EDF3),
+            child: Text('$count',
+                style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF475569))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroCard(int jobCount, int serviceTypeCount, bool isMobile) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isMobile ? 18 : 24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+            colors: [Color(0xFF11B983), Color(0xFF22D3EE)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Find Your Next Job',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isMobile ? 26 : 42,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Text(
+            'Browse available cleaning requests from customers near you. Accept a job, show up, and earn.',
+            style: TextStyle(color: Colors.white, fontSize: isMobile ? 13 : 15),
+          ),
+          const SizedBox(height: 14),
+          Wrap(spacing: 10, runSpacing: 8, children: [
+            _heroPill('$jobCount jobs available'),
+            _heroPill('$serviceTypeCount service types')
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroPill(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(999)),
+      child: Text(label,
+          style: const TextStyle(
+              color: Colors.white, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _togglePill(
+      String label, int count, bool selected, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: selected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF475569))),
+            const SizedBox(width: 8),
+            CircleAvatar(
+                radius: 9,
+                backgroundColor: const Color(0xFFDCEFE8),
+                child: Text('$count',
+                    style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0B9A74)))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _jobCard(BookingItem booking,
+      {required bool canAccept,
+      bool showMarkComplete = false,
+      bool compact = false}) {
+    final date = DateFormat('EEE, MMM d').format(booking.startAt);
+    final time = DateFormat('hh:mm a').format(booking.startAt);
+    final duration = booking.durationHours <= 0
+        ? '2h estimated'
+        : '${booking.durationHours.toStringAsFixed(0)}h estimated';
+    final location =
+        (booking.addressLine1 == null || booking.addressLine1!.trim().isEmpty)
+            ? 'Location unavailable'
+            : booking.addressLine1!.trim();
+    final status = booking.status.toLowerCase();
+    final showNewTag =
+        status == 'pending' || status == 'open' || status == 'available';
+
+    return Container(
+      padding: EdgeInsets.all(compact ? 12 : 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x08000000), blurRadius: 4, offset: Offset(0, 2))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                    color: const Color(0xFFE7F7EF),
+                    borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.home_work_outlined,
+                    size: 16, color: Color(0xFF0B9A74)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  booking.serviceTitle ?? 'Cleaning Service',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: compact ? 16 : 22,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A)),
+                ),
+              ),
+              if (showNewTag)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4D6),
+                      borderRadius: BorderRadius.circular(999)),
+                  child: const Text('NEW',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFCC8A00))),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFEAEFF4)),
+          const SizedBox(height: 10),
+          _metaRow(Icons.calendar_today_outlined, '$date  |  $time', compact),
+          const SizedBox(height: 6),
+          _metaRow(Icons.timelapse_outlined, duration, compact),
+          const SizedBox(height: 6),
+          _metaRow(Icons.location_on_outlined, location, compact),
+          const SizedBox(height: 12),
+          if (canAccept && _canAccept(booking))
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _acceptJob(booking),
+                style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: const Color(0xFFE4F8F0),
+                    foregroundColor: const Color(0xFF067A5E),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10))),
+                child: const Text('Accept Job'),
+              ),
+            )
+          else if (showMarkComplete)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text(
+                          'Mark complete is not connected to backend yet.'),
+                      backgroundColor: Color(0xFF0BAA83)));
+                },
+                icon: const Icon(Icons.check_circle_outline, size: 18),
+                label: const Text('Mark Complete'),
+                style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: const Color(0xFF0ABB85),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10))),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metaRow(IconData icon, String text, bool compact) {
+    return Row(
+      children: [
+        Icon(icon, size: compact ? 14 : 16, color: const Color(0xFF6B7280)),
+        const SizedBox(width: 6),
+        Expanded(
+            child: Text(text,
+                style: TextStyle(
+                    color: const Color(0xFF334155),
+                    fontSize: compact ? 13 : 14))),
+      ],
+    );
+  }
+
+  Widget _errorView(String message, VoidCallback onRetry) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 36, color: Colors.redAccent),
+          const SizedBox(height: 8),
+          Text(message, style: const TextStyle(color: Color(0xFF475569))),
+          const SizedBox(height: 10),
+          OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
+
+  bool _canAccept(BookingItem booking) {
+    if ((booking.workerId ?? '').isNotEmpty) return false;
+    const accepted = {
+      'pending',
+      'pending_payment',
+      'confirmed',
+      'open',
+      'available'
+    };
+    return accepted.contains(booking.status.toLowerCase());
+  }
+
+  Future<void> _acceptJob(BookingItem booking) async {
+    final bookingId = booking.id;
+    if (bookingId.isEmpty) return;
+
+    setState(() {
+      _optimisticAcceptedJobs[bookingId] = booking;
+      _menuIndex = 1;
+      _myJobsTab = 0;
+    });
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await acceptBookingForWorker(apiClient: apiClient, bookingId: bookingId);
+      ref.invalidate(myWorkerWorkProvider);
+      ref.invalidate(workerCustomerBookingsProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Job accepted successfully'),
+          backgroundColor: Color(0xFF0BAA83)));
+    } catch (e) {
+      if (!mounted) return;
+      final message = e.toString().replaceFirst('Exception: ', '');
+      final unsupported =
+          message.toLowerCase().contains('assignment endpoint') &&
+              message.toLowerCase().contains('not supported');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            unsupported
+                ? 'Job moved to My Jobs. Server assignment endpoint is unavailable.'
+                : message,
+          ),
+          backgroundColor:
+              unsupported ? const Color(0xFF0BAA83) : Colors.redAccent,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Logout', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('is_logged_in');
+    await prefs.remove('user_id');
+    await prefs.remove('user_email');
+    await prefs.remove('user_full_name');
+    await prefs.remove('user_role');
+    await prefs.remove('user_address');
+    await prefs.remove('user_phone_number');
+    await prefs.remove('user_profile_picture');
+
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+  }
+}

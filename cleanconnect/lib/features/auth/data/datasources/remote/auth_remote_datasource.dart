@@ -58,6 +58,7 @@ Future<AuthApiModel> login(String email, String password) async {
         userId: user.id ?? "",
         email: email,
         fullName: user.fullName,
+        role: user.role,
         address: user.address,
       );
 

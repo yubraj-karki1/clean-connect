@@ -25,8 +25,21 @@ class ApiEndpoints {
 
   static const String services = "/bookings/services";
   static const String createBooking = "/bookings";
+  static const String allBookings = "/bookings";
+  static const String availableBookings = "/bookings/available";
+  static const String openBookings = "/bookings/open";
+  static const String unassignedBookings = "/bookings/unassigned";
   static const String myBookings = "/bookings/me";
   static String deleteBooking(String id) => "/bookings/$id";
+  static String acceptBooking(String id) => "/bookings/$id/accept";
+  static String assignSelfBooking(String id) => "/bookings/$id/assign-self";
+  static String claimBooking(String id) => "/bookings/$id/claim";
+  static String assignBooking(String id) => "/bookings/$id/assign";
+  static String assignBookingToWorker(String id, String workerId) =>
+      "/bookings/$id/assign/$workerId";
+  static String assignWorkerBooking(String id) => "/bookings/$id/assign-worker";
+  static const String assignBookingRoot = "/bookings/assign";
+  static String bookingById(String id) => "/bookings/$id";
 
   // ========================= PHOTO URL HELPER =========================
 
