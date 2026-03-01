@@ -384,6 +384,34 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
       return;
     }
 
+    final shouldBook = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("Book Service"),
+        content: const Text("Do you want to book this service?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text("No"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00C9A7),
+            ),
+            child: const Text(
+              "Yes",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldBook != true) {
+      return;
+    }
+
     // Build startAt DateTime from picked date + time
     final date = _pickedDate ?? DateTime.now();
     final time = _pickedTime ?? TimeOfDay.now();

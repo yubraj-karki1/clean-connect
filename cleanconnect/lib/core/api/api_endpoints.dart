@@ -40,6 +40,9 @@ class ApiEndpoints {
   static String assignWorkerBooking(String id) => "/bookings/$id/assign-worker";
   static const String assignBookingRoot = "/bookings/assign";
   static String bookingById(String id) => "/bookings/$id";
+  static String completeBooking(String id) => "/bookings/$id/complete";
+  static String markBookingComplete(String id) => "/bookings/$id/mark-complete";
+  static String finishBooking(String id) => "/bookings/$id/finish";
 
   // ========================= PHOTO URL HELPER =========================
 

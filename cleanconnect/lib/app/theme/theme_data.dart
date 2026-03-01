@@ -1,25 +1,118 @@
 import 'package:flutter/material.dart';
+import 'package:cleanconnect/app/theme/app_colors.dart';
 
-ThemeData getApplicationTheme(){
-  return
-  ThemeData(
-        primarySwatch: Colors.orange,
-        scaffoldBackgroundColor: Colors.white,
-        fontFamily: 'OpenSans-Regular',
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        textStyle: const TextStyle(
-          fontSize: 18,
-          color: Colors.white,
-          fontWeight: FontWeight.w500,
-          fontFamily: 'OpenSans-Bold'
-        ),
-        backgroundColor: Colors.orange,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5),
-        ))
+ThemeData getApplicationTheme() {
+  final base = ThemeData(
+    useMaterial3: true,
+    fontFamily: 'OpenSans-Regular',
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: AppColors.authPrimary,
+      brightness: Brightness.light,
+      surface: AppColors.surface,
+    ),
+  );
+
+  return base.copyWith(
+    scaffoldBackgroundColor: AppColors.background,
+    canvasColor: AppColors.background,
+    splashColor: AppColors.authPrimary.withValues(alpha: 0.08),
+    highlightColor: AppColors.authPrimary.withValues(alpha: 0.05),
+    dividerColor: AppColors.divider,
+    textTheme: base.textTheme.copyWith(
+      titleLarge: const TextStyle(
+        fontFamily: 'OpenSans-Bold',
+        fontSize: 22,
+        color: AppColors.textPrimary,
       ),
+      titleMedium: const TextStyle(
+        fontFamily: 'OpenSans-Bold',
+        fontSize: 18,
+        color: AppColors.textPrimary,
+      ),
+      bodyLarge: const TextStyle(
+        fontSize: 16,
+        color: AppColors.textPrimary,
+      ),
+      bodyMedium: const TextStyle(
+        fontSize: 14,
+        color: AppColors.textSecondary,
+      ),
+      labelLarge: const TextStyle(
+        fontFamily: 'OpenSans-Bold',
+        fontSize: 14,
+      ),
+    ),
+    cardTheme: CardThemeData(
+      color: AppColors.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: EdgeInsets.zero,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.authPrimary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        minimumSize: const Size.fromHeight(48),
+        textStyle: const TextStyle(
+          fontFamily: 'OpenSans-Bold',
+          fontSize: 15,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.authPrimary,
+        minimumSize: const Size(0, 46),
+        side: const BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.authPrimary,
+        textStyle: const TextStyle(
+          fontFamily: 'OpenSans-Bold',
+          fontSize: 14,
+        ),
+      ),
+    ),
+    chipTheme: base.chipTheme.copyWith(
+      backgroundColor: AppColors.surfaceVariant,
+      selectedColor: AppColors.authPrimary.withValues(alpha: 0.12),
+      labelStyle: const TextStyle(
+        fontSize: 13,
+        color: AppColors.textPrimary,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      side: const BorderSide(color: AppColors.border),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: AppColors.textPrimary,
+      contentTextStyle: const TextStyle(color: Colors.white),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      titleTextStyle: const TextStyle(
+        fontFamily: 'OpenSans-Bold',
+        fontSize: 18,
+        color: AppColors.textPrimary,
+      ),
+      contentTextStyle: const TextStyle(
+        fontSize: 14,
+        color: AppColors.textSecondary,
+      ),
+    ),
   );
 }
 

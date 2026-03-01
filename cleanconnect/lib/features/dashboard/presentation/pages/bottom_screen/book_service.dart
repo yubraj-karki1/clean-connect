@@ -1,4 +1,5 @@
 import 'package:cleanconnect/core/api/api_client.dart';
+import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -308,6 +309,7 @@ class BookService extends ConsumerWidget {
   }) {
     final dateStr = DateFormat('EEE, MMM d').format(booking.startAt);
     final timeStr = DateFormat('h:mm a').format(booking.startAt);
+    final location = booking.addressLine1?.trim();
     final statusLabel = booking.status.replaceAll('_', ' ');
     final capitalizedStatus =
         statusLabel[0].toUpperCase() + statusLabel.substring(1);
@@ -431,13 +433,6 @@ class BookService extends ConsumerWidget {
                 style: const TextStyle(fontSize: 13, color: Colors.black54),
               ),
             ],
-            if (isWorker && booking.addressLine1 != null && booking.addressLine1!.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(
-                booking.addressLine1!,
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
-              ),
-            ],
             const SizedBox(height: 8),
             Row(
               children: [
@@ -456,6 +451,23 @@ class BookService extends ConsumerWidget {
                     style: const TextStyle(fontSize: 14, color: Colors.grey)),
               ],
             ),
+            if (location != null && location.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 18, color: Colors.grey),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      location,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -492,6 +504,31 @@ class BookService extends ConsumerWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () async {
+                    final shouldAccept = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        title: const Text("Accept Job"),
+                        content: const Text("Do you want to accept this job?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(false),
+                            child: const Text("No"),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(true),
+                            child: const Text("Yes"),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldAccept != true) {
+                      return;
+                    }
+
                     try {
                       final apiClient = ref.read(apiClientProvider);
                       await acceptBookingForWorker(
@@ -502,11 +539,11 @@ class BookService extends ConsumerWidget {
                       ref.invalidate(workerCustomerBookingsProvider);
 
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Job accepted successfully"),
-                            backgroundColor: Color(0xFF00C9A7),
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const DashboardScreen(initialIndex: 1),
                           ),
+                          (route) => false,
                         );
                       }
                     } catch (e) {

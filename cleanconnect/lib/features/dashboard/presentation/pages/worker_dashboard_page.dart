@@ -20,7 +20,9 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
   String _searchQuery = '';
   String _serviceFilter = 'All Jobs';
   final TextEditingController _searchController = TextEditingController();
-  final Map<String, BookingItem> _optimisticAcceptedJobs = {};
+  final Set<String> _acceptingJobIds = {};
+  final Set<String> _completingJobIds = {};
+  final Map<String, BookingItem> _locallyAcceptedJobs = {};
 
   @override
   void dispose() {
@@ -229,7 +231,7 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
       data: (jobs) {
         final openJobs = jobs
             .where((e) => e.status != 'completed' && e.status != 'cancelled')
-            .where((e) => !_optimisticAcceptedJobs.containsKey(e.id))
+            .where((e) => !_locallyAcceptedJobs.containsKey(e.id))
             .toList();
         final serviceGroups = <String, int>{};
         for (final j in openJobs) {
@@ -376,20 +378,20 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
           error.toString().replaceFirst('Exception: ', ''),
           () => ref.invalidate(myWorkerWorkProvider)),
       data: (jobs) {
-        final merged = <String, BookingItem>{};
+        final mergedJobs = <String, BookingItem>{};
         for (final b in jobs) {
-          merged[b.id] = b;
+          mergedJobs[b.id] = b;
         }
-        for (final b in _optimisticAcceptedJobs.values) {
-          merged[b.id] = b;
+        for (final entry in _locallyAcceptedJobs.entries) {
+          mergedJobs.putIfAbsent(entry.key, () => entry.value);
         }
-        final allJobs = merged.values.toList();
+
+        final allJobs = mergedJobs.values.toList();
 
         final active = allJobs
             .where((b) => b.status != 'completed' && b.status != 'cancelled')
             .toList();
-        final completed =
-            allJobs.where((b) => b.status == 'completed').toList();
+        final completed = allJobs.where((b) => b.status == 'completed').toList();
         final visible = _myJobsTab == 0 ? active : completed;
 
         return Column(
@@ -463,6 +465,9 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 40),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         side: BorderSide(
             color:
                 selected ? const Color(0xFF0BB587) : const Color(0xFFD6DEE6)),
@@ -653,28 +658,35 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _acceptJob(booking),
+                onPressed: _acceptingJobIds.contains(booking.id)
+                    ? null
+                    : () => _acceptJob(booking),
                 style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: const Color(0xFFE4F8F0),
                     foregroundColor: const Color(0xFF067A5E),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10))),
-                child: const Text('Accept Job'),
+                child: Text(
+                  _acceptingJobIds.contains(booking.id)
+                      ? 'Accepting...'
+                      : 'Accept Job',
+                ),
               ),
             )
           else if (showMarkComplete)
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text(
-                          'Mark complete is not connected to backend yet.'),
-                      backgroundColor: Color(0xFF0BAA83)));
-                },
+                onPressed: _completingJobIds.contains(booking.id)
+                    ? null
+                    : () => _markJobComplete(booking),
                 icon: const Icon(Icons.check_circle_outline, size: 18),
-                label: const Text('Mark Complete'),
+                label: Text(
+                  _completingJobIds.contains(booking.id)
+                      ? 'Completing...'
+                      : 'Mark Complete',
+                ),
                 style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: const Color(0xFF0ABB85),
@@ -732,11 +744,30 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
   Future<void> _acceptJob(BookingItem booking) async {
     final bookingId = booking.id;
     if (bookingId.isEmpty) return;
+    final shouldAccept = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Accept Job'),
+        content: const Text('Do you want to accept this job?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldAccept != true) {
+      return;
+    }
 
     setState(() {
-      _optimisticAcceptedJobs[bookingId] = booking;
-      _menuIndex = 1;
-      _myJobsTab = 0;
+      _acceptingJobIds.add(bookingId);
     });
 
     try {
@@ -748,25 +779,97 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Job accepted successfully'),
           backgroundColor: Color(0xFF0BAA83)));
+      setState(() {
+        _locallyAcceptedJobs[bookingId] = BookingItem(
+          id: booking.id,
+          serviceId: booking.serviceId,
+          status: 'assigned',
+          workerId: booking.workerId,
+          workerName: booking.workerName,
+          customerName: booking.customerName,
+          addressLine1: booking.addressLine1,
+          startAt: booking.startAt,
+          endAt: booking.endAt,
+          durationHours: booking.durationHours,
+          notes: booking.notes,
+          pricing: booking.pricing,
+          serviceTitle: booking.serviceTitle,
+        );
+        _menuIndex = 1;
+        _myJobsTab = 0;
+      });
     } catch (e) {
       if (!mounted) return;
-      final message = e.toString().replaceFirst('Exception: ', '');
-      final unsupported =
-          message.toLowerCase().contains('assignment endpoint') &&
-              message.toLowerCase().contains('not supported');
-
+      final message = _friendlyError(e.toString().replaceFirst('Exception: ', ''));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            unsupported
-                ? 'Job moved to My Jobs. Server assignment endpoint is unavailable.'
-                : message,
-          ),
-          backgroundColor:
-              unsupported ? const Color(0xFF0BAA83) : Colors.redAccent,
+          content: Text(message),
+          backgroundColor: Colors.redAccent,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _acceptingJobIds.remove(bookingId);
+        });
+      }
     }
+  }
+
+  Future<void> _markJobComplete(BookingItem booking) async {
+    final bookingId = booking.id;
+    if (bookingId.isEmpty) return;
+
+    setState(() {
+      _completingJobIds.add(bookingId);
+    });
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      await completeBookingForWorker(
+        apiClient: apiClient,
+        bookingId: bookingId,
+      );
+      _locallyAcceptedJobs.remove(bookingId);
+
+      ref.invalidate(myWorkerWorkProvider);
+      ref.invalidate(workerCustomerBookingsProvider);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Job marked as complete'),
+          backgroundColor: Color(0xFF0BAA83),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final message = _friendlyError(e.toString().replaceFirst('Exception: ', ''));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _completingJobIds.remove(bookingId);
+        });
+      }
+    }
+  }
+
+  String _friendlyError(String raw) {
+    final text = raw.trim();
+    final lower = text.toLowerCase();
+    if (lower.contains('<!doctype html>') ||
+        lower.contains('cannot post ') ||
+        lower.contains('cannot put ') ||
+        lower.contains('cannot patch ')) {
+      return 'Requested action is not available on server. Please contact admin.';
+    }
+    return text;
   }
 
   Future<void> _handleLogout() async {

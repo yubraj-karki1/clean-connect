@@ -63,8 +63,12 @@ class BookingItem {
   });
 
   factory BookingItem.fromJson(Map<String, dynamic> json) {
-    final workerJson =
-        json['workerId'] ?? json['assignedWorkerId'] ?? json['worker'];
+    final workerJson = json['workerId'] ??
+        json['assignedWorkerId'] ??
+        json['worker'] ??
+        json['assignedTo'] ??
+        json['acceptedBy'] ??
+        json['assignedWorker'];
     final customerJson = json['customerId'] ?? json['customer'];
     final addressJson = json['address'];
     final locationJson = json['location'];
@@ -78,7 +82,9 @@ class BookingItem {
 
     String? extractName(dynamic value) {
       if (value is Map<String, dynamic>) {
-        return value['fullName']?.toString() ?? value['name']?.toString();
+        return value['fullName']?.toString() ??
+            value['name']?.toString() ??
+            value['username']?.toString();
       }
       return null;
     }
@@ -206,7 +212,7 @@ class BookingItem {
       serviceId: json['serviceId'] is Map
           ? json['serviceId']['_id'] ?? ''
           : json['serviceId'] ?? '',
-      status: json['status'] ?? '',
+      status: (json['status'] ?? json['bookingStatus'] ?? '').toString(),
       workerId: extractId(workerJson),
       workerName: extractName(workerJson),
       customerName: extractName(customerJson),
@@ -540,20 +546,8 @@ Future<void> acceptBookingForWorker({
     throw Exception('No token found. Please login again.');
   }
 
-  String extractError(dynamic errData) {
-    if (errData is Map) {
-      return (errData['message'] ?? errData['error'] ?? 'Request failed')
-          .toString();
-    }
-
-    final text = errData?.toString() ?? 'Request failed';
-    if (text.contains('Cannot POST') ||
-        text.contains('Cannot PUT') ||
-        text.contains('Cannot PATCH')) {
-      return 'Assignment endpoint not supported on server';
-    }
-    return text;
-  }
+  String extractError(dynamic errData) =>
+      _extractApiError(errData, unsupportedLabel: 'Assignment');
 
   final attempts = <Future<Response> Function()>[
     if (userId != null && userId.isNotEmpty)
@@ -658,9 +652,6 @@ Future<void> acceptBookingForWorker({
         ),
     () => apiClient.put(
           ApiEndpoints.acceptBooking(bookingId),
-          data: {
-            if (userId != null && userId.isNotEmpty) 'workerId': userId,
-          },
           options: Options(
             headers: {
               'Authorization': 'Bearer $token',
@@ -684,6 +675,17 @@ Future<void> acceptBookingForWorker({
             'status': 'assigned',
             if (userId != null && userId.isNotEmpty) 'workerId': userId,
             if (userId != null && userId.isNotEmpty) 'assignedWorkerId': userId,
+          },
+          options: Options(
+            headers: {
+              'Authorization': 'Bearer $token',
+            },
+          ),
+        ),
+    () => apiClient.patch(
+          ApiEndpoints.acceptBooking(bookingId),
+          data: {
+            if (userId != null && userId.isNotEmpty) 'workerId': userId,
           },
           options: Options(
             headers: {
@@ -746,26 +748,161 @@ Future<void> acceptBookingForWorker({
     } on DioException catch (e) {
       final errData = e.response?.data;
       final message = extractError(errData);
-      if (message == 'Assignment endpoint not supported on server') {
+      if (_isUnavailableEndpointMessage(message)) {
         sawUnsupportedRoute = true;
       }
       if (bestError == null ||
-          (bestError == 'Assignment endpoint not supported on server' &&
-              message != 'Assignment endpoint not supported on server')) {
+          (_isUnavailableEndpointMessage(bestError) &&
+              !_isUnavailableEndpointMessage(message))) {
         bestError = message;
       }
     } catch (e) {
       final message = e.toString().replaceFirst('Exception: ', '');
       if (bestError == null ||
-          (bestError == 'Assignment endpoint not supported on server' &&
-              message != 'Assignment endpoint not supported on server')) {
+          (_isUnavailableEndpointMessage(bestError) &&
+              !_isUnavailableEndpointMessage(message))) {
         bestError = message;
       }
     }
   }
 
   if (sawUnsupportedRoute && (bestError == null || bestError.isEmpty)) {
-    throw Exception('Server does not expose a worker-assignment route');
+    throw Exception('Assignment endpoint is unavailable on server');
   }
   throw Exception(bestError ?? 'Could not accept job with available endpoints');
+}
+
+/// Worker marks own job as completed.
+Future<void> completeBookingForWorker({
+  required ApiClient apiClient,
+  required String bookingId,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+
+  if (token == null || token.isEmpty) {
+    throw Exception('No token found. Please login again.');
+  }
+
+  String extractError(dynamic errData) =>
+      _extractApiError(errData, unsupportedLabel: 'Completion');
+
+  final attempts = <Future<Response> Function()>[
+    () => apiClient.post(
+          ApiEndpoints.completeBooking(bookingId),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+    () => apiClient.post(
+          ApiEndpoints.markBookingComplete(bookingId),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+    () => apiClient.post(
+          ApiEndpoints.finishBooking(bookingId),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+    () => apiClient.patch(
+          ApiEndpoints.completeBooking(bookingId),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+    () => apiClient.put(
+          ApiEndpoints.completeBooking(bookingId),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+    () => apiClient.patch(
+          ApiEndpoints.markBookingComplete(bookingId),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+    () => apiClient.put(
+          ApiEndpoints.markBookingComplete(bookingId),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+    () => apiClient.patch(
+          ApiEndpoints.bookingById(bookingId),
+          data: const {
+            'status': 'completed',
+            'bookingStatus': 'completed',
+            'isCompleted': true,
+            'completed': true,
+          },
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+    () => apiClient.put(
+          ApiEndpoints.bookingById(bookingId),
+          data: const {
+            'status': 'completed',
+            'bookingStatus': 'completed',
+            'isCompleted': true,
+            'completed': true,
+          },
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+  ];
+
+  String? bestError;
+  var sawUnsupportedRoute = false;
+
+  for (final run in attempts) {
+    try {
+      final response = await run();
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['success'] == false) {
+        throw Exception(data['message'] ?? 'Failed to mark job complete');
+      }
+      return;
+    } on DioException catch (e) {
+      final message = extractError(e.response?.data);
+      if (_isUnavailableEndpointMessage(message)) {
+        sawUnsupportedRoute = true;
+      }
+      if (bestError == null ||
+          (_isUnavailableEndpointMessage(bestError) &&
+              !_isUnavailableEndpointMessage(message))) {
+        bestError = message;
+      }
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '');
+      if (bestError == null ||
+          (_isUnavailableEndpointMessage(bestError) &&
+              !_isUnavailableEndpointMessage(message))) {
+        bestError = message;
+      }
+    }
+  }
+
+  if (sawUnsupportedRoute && (bestError == null || bestError.isEmpty)) {
+    throw Exception('Completion endpoint is unavailable on server');
+  }
+  throw Exception(bestError ?? 'Could not mark job complete');
+}
+
+String _extractApiError(
+  dynamic errData, {
+  required String unsupportedLabel,
+}) {
+  if (errData is Map) {
+    final direct = (errData['message'] ?? errData['error'])?.toString().trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+  }
+
+  final raw = (errData?.toString() ?? 'Request failed').trim();
+  final preMatch = RegExp(r'<pre>(.*?)</pre>', caseSensitive: false, dotAll: true)
+      .firstMatch(raw);
+  final extracted = preMatch?.group(1)?.trim();
+  final text = (extracted != null && extracted.isNotEmpty) ? extracted : raw;
+  final lower = text.toLowerCase();
+
+  final routeUnsupported = lower.contains('cannot post') ||
+      lower.contains('cannot put') ||
+      lower.contains('cannot patch') ||
+      lower.contains('<!doctype html>');
+  if (routeUnsupported) {
+    return '$unsupportedLabel endpoint is unavailable on server';
+  }
+
+  return text;
+}
+
+bool _isUnavailableEndpointMessage(String? message) {
+  if (message == null) return false;
+  return message.toLowerCase().contains('endpoint is unavailable on server');
 }

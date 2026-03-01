@@ -1,4 +1,5 @@
 import 'package:cleanconnect/features/dashboard/presentation/pages/service_details_page.dart';
+import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/favourites_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/profile_provider.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,34 @@ class Home extends ConsumerStatefulWidget {
 class _HomeState extends ConsumerState<Home> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+
+  Future<bool> _confirmBooking() async {
+    final shouldBook = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Book Service'),
+        content: const Text('Do you want to book this service?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00C9A7),
+            ),
+            child: const Text(
+              'Yes',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return shouldBook ?? false;
+  }
 
   @override
   void dispose() {
@@ -203,24 +232,24 @@ class _HomeState extends ConsumerState<Home> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
                   featuredCleanerCard(
-                    "assets/images/cleaner1.jpg",
-                    "Sarah Johnson",
+                    "assets/images/sushim.jpg",
+                    "Sushim Rupakheti",
                     4.9,
                     127,
                     5,
                     35,
                   ),
                   featuredCleanerCard(
-                    "assets/images/cleaner2.jpg",
-                    "Michael Chen",
+                    "assets/images/dipen.jpeg",
+                    "Dipen Tamang",
                     4.8,
                     95,
                     4,
                     32,
                   ),
                   featuredCleanerCard(
-                    "assets/images/cleaner3.jpg",
-                    "Emma Davis",
+                    "assets/images/joshep.jpeg",
+                    "Jamling Tamang",
                     5.0,
                     203,
                     7,
@@ -311,12 +340,17 @@ class _HomeState extends ConsumerState<Home> {
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
-                child: Image.asset(
-                  img,
-                  height: 130,
-                  width: 200,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.asset(img,
+                    height: 130,
+                    width: 200,
+                    fit: BoxFit.cover, errorBuilder: (_, __, ___) {
+                  return Image.asset(
+                    "assets/images/sushim.jpg",
+                    height: 130,
+                    width: 200,
+                    fit: BoxFit.cover,
+                  );
+                }),
               ),
               Positioned(
                 top: 8,
@@ -424,7 +458,10 @@ class _HomeState extends ConsumerState<Home> {
                   width: double.infinity,
                   height: 36,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      final shouldBook = await _confirmBooking();
+                      if (!shouldBook) return;
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -461,42 +498,12 @@ class _HomeState extends ConsumerState<Home> {
 
 // ========================= NOTIFICATIONS PAGE =========================
 
-class _NotificationsPage extends StatelessWidget {
+class _NotificationsPage extends ConsumerWidget {
   const _NotificationsPage();
 
   @override
-  Widget build(BuildContext context) {
-    // Static notifications for now
-    final notifications = [
-      {
-        'icon': Icons.check_circle,
-        'color': const Color(0xFF00C9A7),
-        'title': 'Booking Confirmed',
-        'subtitle': 'Your home cleaning booking has been confirmed.',
-        'time': '2 min ago',
-      },
-      {
-        'icon': Icons.star,
-        'color': Colors.amber,
-        'title': 'Rate Your Service',
-        'subtitle': 'How was your recent cleaning experience?',
-        'time': '1 hour ago',
-      },
-      {
-        'icon': Icons.local_offer,
-        'color': Colors.orange,
-        'title': 'Special Offer!',
-        'subtitle': 'Get 20% off on your next deep cleaning.',
-        'time': '3 hours ago',
-      },
-      {
-        'icon': Icons.person_add,
-        'color': Colors.blue,
-        'title': 'New Cleaner Available',
-        'subtitle': 'A top-rated cleaner is now in your area.',
-        'time': '1 day ago',
-      },
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookingsAsync = ref.watch(myBookingsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -541,46 +548,131 @@ class _NotificationsPage extends StatelessWidget {
 
           // List
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: notifications.length,
-              itemBuilder: (context, index) {
-                final n = notifications[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                  color: Colors.white,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    leading: CircleAvatar(
-                      backgroundColor:
-                          (n['color'] as Color).withOpacity(0.15),
-                      child: Icon(n['icon'] as IconData,
-                          color: n['color'] as Color),
+            child: bookingsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Failed to load notifications",
+                      style: TextStyle(color: Colors.grey[600]),
                     ),
-                    title: Text(
-                      n['title'] as String,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      onPressed: () => ref.invalidate(myBookingsProvider),
+                      child: const Text("Retry"),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                ),
+              ),
+              data: (bookings) {
+                final acceptedJobs = bookings.where((booking) {
+                  final status = booking.status.toLowerCase();
+                  final hasWorker = (booking.workerId?.trim().isNotEmpty ?? false) ||
+                      (booking.workerName?.trim().isNotEmpty ?? false);
+                  const hiddenStatuses = {
+                    'cancelled',
+                    'completed',
+                  };
+
+                  // Some backends keep status as pending after worker assignment.
+                  // For customer notifications, worker assignment itself means accepted.
+                  return hasWorker && !hiddenStatuses.contains(status);
+                }).toList()
+                  ..sort((a, b) => b.startAt.compareTo(a.startAt));
+
+                if (acceptedJobs.isEmpty) {
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(myBookingsProvider);
+                      await ref.read(myBookingsProvider.future);
+                    },
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
-                        const SizedBox(height: 4),
-                        Text(n['subtitle'] as String,
-                            style: TextStyle(
-                                fontSize: 13, color: Colors.grey[600])),
-                        const SizedBox(height: 4),
-                        Text(n['time'] as String,
-                            style: TextStyle(
-                                fontSize: 11, color: Colors.grey[400])),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.55,
+                          child: Center(
+                            child: Text(
+                              "No notifications yet",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(myBookingsProvider);
+                    await ref.read(myBookingsProvider.future);
+                  },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: acceptedJobs.length,
+                    itemBuilder: (context, index) {
+                      final booking = acceptedJobs[index];
+                      final serviceName = booking.serviceTitle ?? 'Cleaning Service';
+                      final workerName = booking.workerName?.trim().isNotEmpty == true
+                          ? booking.workerName!.trim()
+                          : 'A worker';
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                        color: Colors.white,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          leading: const CircleAvatar(
+                            backgroundColor: Color(0x2600C9A7),
+                            child: Icon(
+                              Icons.check_circle,
+                              color: Color(0xFF00C9A7),
+                            ),
+                          ),
+                          title: const Text(
+                            "Job Accepted",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(
+                                "$workerName accepted your $serviceName booking.",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Scheduled: ${_formatSchedule(context, booking.startAt)}",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
@@ -589,5 +681,13 @@ class _NotificationsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatSchedule(BuildContext context, DateTime dateTime) {
+    final date = MaterialLocalizations.of(context).formatMediumDate(dateTime);
+    final time = MaterialLocalizations.of(context).formatTimeOfDay(
+      TimeOfDay.fromDateTime(dateTime),
+    );
+    return "$date at $time";
   }
 }

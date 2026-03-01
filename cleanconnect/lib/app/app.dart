@@ -1,4 +1,5 @@
 import 'package:cleanconnect/app/theme/bottom_navigationbar_theme_data.dart';
+import 'package:cleanconnect/app/theme/appbar_theme.dart';
 import 'package:cleanconnect/app/theme/input_decoration_theme.dart';
 import 'package:cleanconnect/features/splash/presentation/pages/splash_screen1.dart';
 import 'package:cleanconnect/features/auth/presentation/pages/login_screen.dart';
@@ -15,6 +16,7 @@ class App extends StatelessWidget {
         title: 'Flutter Apps for College',
         debugShowCheckedModeBanner: false,
         theme: getApplicationTheme().copyWith(
+          appBarTheme: getAppBarTheme(),
           inputDecorationTheme: getTextFieldTheme(),
           bottomNavigationBarTheme: getBottomNavigationBarTheme(),
         ), 

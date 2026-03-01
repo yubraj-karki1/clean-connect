@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:cleanconnect/app/theme/app_colors.dart';
 
 BottomNavigationBarThemeData getBottomNavigationBarTheme() {
   return BottomNavigationBarThemeData(
-    backgroundColor: Colors.blueGrey,
-    selectedItemColor: Colors.black,
-    unselectedItemColor: Colors.white,
+    backgroundColor: AppColors.surface,
+    selectedItemColor: AppColors.authPrimary,
+    unselectedItemColor: AppColors.textTertiary,
+    elevation: 0,
+    type: BottomNavigationBarType.fixed,
+    selectedIconTheme: const IconThemeData(size: 24),
+    unselectedIconTheme: const IconThemeData(size: 22),
     selectedLabelStyle: const TextStyle(
       fontFamily: 'OpenSans-Bold',
-      fontSize: 14,
+      fontSize: 12,
     ),
     unselectedLabelStyle: const TextStyle(
       fontFamily: 'OpenSans-Regular',
       fontSize: 12,
     ),
+    showUnselectedLabels: true,
   );
 }
