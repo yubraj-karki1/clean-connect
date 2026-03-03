@@ -134,8 +134,7 @@ class Favourite extends ConsumerWidget {
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child:
-                      const Icon(Icons.person, size: 40, color: Colors.grey),
+                  child: const Icon(Icons.person, size: 40, color: Colors.grey),
                 ),
               ),
             ),
@@ -177,8 +176,7 @@ class Favourite extends ConsumerWidget {
                     children: [
                       Text(
                         "${cleaner.yearsExp} yrs exp.",
-                        style:
-                            TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                       const Spacer(),
                       Text(
@@ -198,10 +196,11 @@ class Favourite extends ConsumerWidget {
             // Remove Button
             IconButton(
               icon: const Icon(Icons.favorite, color: Colors.red, size: 26),
-              onPressed: () {
-                ref
-                    .read(favouritesProvider.notifier)
-                    .toggleFavourite(cleaner);
+              onPressed: () async {
+                await ref.read(favouritesProvider.notifier).toggleFavourite(
+                      cleaner,
+                    );
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text("${cleaner.name} removed from favourites"),

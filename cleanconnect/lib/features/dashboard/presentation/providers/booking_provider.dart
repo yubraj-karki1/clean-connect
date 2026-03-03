@@ -37,6 +37,7 @@ class BookingItem {
   final String status;
   final String? workerId;
   final String? workerName;
+  final String? customerId;
   final String? customerName;
   final String? addressLine1;
   final DateTime startAt;
@@ -52,6 +53,7 @@ class BookingItem {
     required this.status,
     this.workerId,
     this.workerName,
+    this.customerId,
     this.customerName,
     this.addressLine1,
     required this.startAt,
@@ -215,6 +217,7 @@ class BookingItem {
       status: (json['status'] ?? json['bookingStatus'] ?? '').toString(),
       workerId: extractId(workerJson),
       workerName: extractName(workerJson),
+      customerId: extractId(customerJson),
       customerName: extractName(customerJson),
       addressLine1: extractLocation(),
       startAt: (DateTime.tryParse(json['startAt'] ?? '') ?? DateTime.now())
@@ -744,6 +747,12 @@ Future<void> acceptBookingForWorker({
         throw Exception(data['message'] ?? 'Failed to accept job');
       }
 
+      await _notifyCustomerOnJobAccepted(
+        apiClient: apiClient,
+        token: token,
+        bookingId: bookingId,
+        workerId: userId,
+      );
       return;
     } on DioException catch (e) {
       final errData = e.response?.data;
@@ -770,6 +779,102 @@ Future<void> acceptBookingForWorker({
     throw Exception('Assignment endpoint is unavailable on server');
   }
   throw Exception(bestError ?? 'Could not accept job with available endpoints');
+}
+
+Future<void> _notifyCustomerOnJobAccepted({
+  required ApiClient apiClient,
+  required String token,
+  required String bookingId,
+  required String? workerId,
+}) async {
+  try {
+    final bookingResponse = await apiClient.get(
+      ApiEndpoints.bookingById(bookingId),
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      ),
+    );
+
+    final bookingMap = _extractSingleBookingMap(bookingResponse.data);
+    if (bookingMap == null) return;
+
+    final booking = BookingItem.fromJson(bookingMap);
+    final customerId = booking.customerId?.trim();
+    if (customerId == null || customerId.isEmpty) return;
+
+    final serviceName = booking.serviceTitle?.trim().isNotEmpty == true
+        ? booking.serviceTitle!.trim()
+        : 'booking';
+
+    final payload = <String, dynamic>{
+      'userId': customerId,
+      'recipientId': customerId,
+      'toUserId': customerId,
+      'customerId': customerId,
+      'bookingId': bookingId,
+      if (workerId != null && workerId.isNotEmpty) 'workerId': workerId,
+      'type': 'job_accepted',
+      'title': 'Job Accepted',
+      'message': 'A worker accepted your $serviceName booking.',
+      'data': {
+        'bookingId': bookingId,
+        'type': 'job_accepted',
+        'customerId': customerId,
+        if (workerId != null && workerId.isNotEmpty) 'workerId': workerId,
+      },
+    };
+
+    final notifyAttempts = <Future<Response> Function()>[
+      () => apiClient.post(
+            '/notifications',
+            data: payload,
+            options: Options(headers: {'Authorization': 'Bearer $token'}),
+          ),
+      () => apiClient.post(
+            '/notifications/send',
+            data: payload,
+            options: Options(headers: {'Authorization': 'Bearer $token'}),
+          ),
+      () => apiClient.post(
+            '/notifications/push',
+            data: payload,
+            options: Options(headers: {'Authorization': 'Bearer $token'}),
+          ),
+      () => apiClient.post(
+            '/users/$customerId/notifications',
+            data: payload,
+            options: Options(headers: {'Authorization': 'Bearer $token'}),
+          ),
+    ];
+
+    for (final run in notifyAttempts) {
+      try {
+        final response = await run();
+        final data = response.data;
+        if (data is Map<String, dynamic> && data['success'] == false) {
+          continue;
+        }
+        return;
+      } on DioException catch (e) {
+        final code = e.response?.statusCode ?? 0;
+        if (code == 404 || code == 405) {
+          continue;
+        }
+      } catch (_) {}
+    }
+  } catch (_) {
+    // Do not block accept flow when notification endpoint is unavailable.
+  }
+}
+
+Map<String, dynamic>? _extractSingleBookingMap(dynamic responseData) {
+  if (responseData is Map<String, dynamic>) {
+    final raw = responseData['data'] ?? responseData['booking'] ?? responseData;
+    if (raw is Map<String, dynamic>) return raw;
+  }
+  return null;
 }
 
 /// Worker marks own job as completed.

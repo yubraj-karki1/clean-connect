@@ -1,3 +1,4 @@
+import 'package:cleanconnect/core/api/api_client.dart';
 import 'package:cleanconnect/features/dashboard/presentation/pages/service_details_page.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/favourites_provider.dart';
@@ -49,10 +50,12 @@ class _HomeState extends ConsumerState<Home> {
     _searchController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
-    final userName = profileAsync.whenOrNull(data: (user) => user.fullName) ?? 'User';
+    final userName =
+        profileAsync.whenOrNull(data: (user) => user.fullName) ?? 'User';
 
     // All services for search filtering
     final allServices = [
@@ -111,7 +114,8 @@ class _HomeState extends ConsumerState<Home> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const _NotificationsPage(),
+                                builder: (context) =>
+                                    const _NotificationsPage(),
                               ),
                             );
                           },
@@ -120,9 +124,9 @@ class _HomeState extends ConsumerState<Home> {
                         ),
                       ],
                     ),
-                
+
                     const SizedBox(height: 5),
-                
+
                     const Text(
                       "Find your perfect cleaning service",
                       style: TextStyle(
@@ -130,7 +134,7 @@ class _HomeState extends ConsumerState<Home> {
                         fontSize: 20,
                       ),
                     ),
-                
+
                     const SizedBox(height: 20),
 
                     //  Search Bar
@@ -180,34 +184,34 @@ class _HomeState extends ConsumerState<Home> {
               ),
             ),
 
-           const SizedBox(height: 0),
+            const SizedBox(height: 0),
 
             // Service Icons Grid
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: filteredServices.isEmpty
-                    ? Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(32),
-                        child: const Center(
-                          child: Text(
-                            "No services found",
-                            style: TextStyle(fontSize: 15, color: Colors.grey),
-                          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: filteredServices.isEmpty
+                  ? Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(32),
+                      child: const Center(
+                        child: Text(
+                          "No services found",
+                          style: TextStyle(fontSize: 15, color: Colors.grey),
                         ),
-                      )
-                    : GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 3,
-                        childAspectRatio: 0.85,
-                        crossAxisSpacing: 15,
-                        mainAxisSpacing: 15,
-                        children: filteredServices
-                            .map((s) => serviceCard(s['img']!, s['title']!))
-                            .toList(),
                       ),
-              ),
+                    )
+                  : GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      children: filteredServices
+                          .map((s) => serviceCard(s['img']!, s['title']!))
+                          .toList(),
+                    ),
+            ),
 
             const SizedBox(height: 20),
 
@@ -272,7 +276,8 @@ class _HomeState extends ConsumerState<Home> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ServiceDetailsPage(serviceTitle: title.replaceAll('\n', ' ')),
+            builder: (context) =>
+                ServiceDetailsPage(serviceTitle: title.replaceAll('\n', ' ')),
           ),
         );
       },
@@ -356,18 +361,20 @@ class _HomeState extends ConsumerState<Home> {
                 top: 8,
                 right: 8,
                 child: GestureDetector(
-                  onTap: () {
-                    final wasAlreadyFav = ref.read(favouritesProvider).any((c) => c.name == name);
-                    ref.read(favouritesProvider.notifier).toggleFavourite(
-                      Cleaner(
-                        name: name,
-                        image: img,
-                        rating: rating,
-                        reviews: reviews,
-                        yearsExp: yearsExp,
-                        pricePerHr: pricePerHr,
-                      ),
-                    );
+                  onTap: () async {
+                    final wasAlreadyFav =
+                        ref.read(favouritesProvider).any((c) => c.name == name);
+                    await ref.read(favouritesProvider.notifier).toggleFavourite(
+                          Cleaner(
+                            name: name,
+                            image: img,
+                            rating: rating,
+                            reviews: reviews,
+                            yearsExp: yearsExp,
+                            pricePerHr: pricePerHr,
+                          ),
+                        );
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).clearSnackBars();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -461,6 +468,7 @@ class _HomeState extends ConsumerState<Home> {
                     onPressed: () async {
                       final shouldBook = await _confirmBooking();
                       if (!shouldBook) return;
+                      if (!mounted) return;
 
                       Navigator.push(
                         context,
@@ -498,12 +506,143 @@ class _HomeState extends ConsumerState<Home> {
 
 // ========================= NOTIFICATIONS PAGE =========================
 
+class _NotificationItem {
+  final String id;
+  final String title;
+  final String message;
+  final String? workerId;
+  final String? bookingId;
+  final DateTime createdAt;
+
+  const _NotificationItem({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.createdAt,
+    this.workerId,
+    this.bookingId,
+  });
+}
+
+final notificationItemsProvider =
+    FutureProvider.autoDispose<List<_NotificationItem>>((ref) async {
+  final apiClient = ref.read(apiClientProvider);
+
+  List<_NotificationItem> parseItems(dynamic responseData) {
+    List<dynamic>? asList;
+    if (responseData is List) {
+      asList = responseData;
+    } else if (responseData is Map<String, dynamic>) {
+      final data = responseData['data'] ??
+          responseData['notifications'] ??
+          responseData['results'] ??
+          responseData['items'];
+      if (data is List) {
+        asList = data;
+      } else if (data is Map<String, dynamic>) {
+        asList = [data];
+      }
+    }
+
+    if (asList == null || asList.isEmpty) return <_NotificationItem>[];
+
+    final parsed = <_NotificationItem>[];
+    for (final item in asList) {
+      if (item is! Map<String, dynamic>) continue;
+      final nestedData = item['data'] is Map<String, dynamic>
+          ? item['data'] as Map<String, dynamic>
+          : const <String, dynamic>{};
+      final createdAtText = item['createdAt']?.toString() ??
+          item['timestamp']?.toString() ??
+          item['date']?.toString();
+      final createdAt =
+          DateTime.tryParse(createdAtText ?? '') ?? DateTime.now();
+      final workerId = item['workerId']?.toString() ??
+          nestedData['workerId']?.toString() ??
+          nestedData['acceptedBy']?.toString();
+      final bookingId =
+          item['bookingId']?.toString() ?? nestedData['bookingId']?.toString();
+
+      parsed.add(
+        _NotificationItem(
+          id: item['_id']?.toString() ??
+              item['id']?.toString() ??
+              bookingId ??
+              createdAt.millisecondsSinceEpoch.toString(),
+          title: item['title']?.toString().trim().isNotEmpty == true
+              ? item['title'].toString().trim()
+              : 'Job Accepted',
+          message: item['message']?.toString().trim().isNotEmpty == true
+              ? item['message'].toString().trim()
+              : 'A worker accepted your booking.',
+          createdAt: createdAt,
+          workerId: workerId,
+          bookingId: bookingId,
+        ),
+      );
+    }
+
+    parsed.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return parsed;
+  }
+
+  final notificationEndpoints = <String>[
+    '/notifications/me',
+    '/notifications',
+    '/users/me/notifications',
+  ];
+
+  for (final endpoint in notificationEndpoints) {
+    try {
+      final response = await apiClient.get(endpoint);
+      final items = parseItems(response.data);
+      if (items.isNotEmpty) return items;
+    } catch (_) {}
+  }
+
+  // Fallback: derive notifications from accepted/assigned bookings.
+  final bookings = await ref.read(myBookingsProvider.future);
+  final accepted = bookings.where((booking) {
+    final status = booking.status.toLowerCase();
+    final hasWorker = (booking.workerId?.trim().isNotEmpty ?? false) ||
+        (booking.workerName?.trim().isNotEmpty ?? false);
+    const acceptedStatuses = {
+      'accepted',
+      'assigned',
+      'confirmed',
+      'in_progress',
+      'in-progress',
+    };
+    const hiddenStatuses = {
+      'cancelled',
+      'completed',
+    };
+    return (hasWorker || acceptedStatuses.contains(status)) &&
+        !hiddenStatuses.contains(status);
+  }).toList()
+    ..sort((a, b) => b.startAt.compareTo(a.startAt));
+
+  return accepted
+      .map(
+        (booking) => _NotificationItem(
+          id: booking.id,
+          title: 'Job Accepted',
+          message:
+              '${booking.workerName?.trim().isNotEmpty == true ? booking.workerName!.trim() : 'A worker'} accepted your ${booking.serviceTitle ?? 'cleaning service'} booking.',
+          createdAt: booking.startAt,
+          workerId: booking.workerId,
+          bookingId: booking.id,
+        ),
+      )
+      .toList();
+});
+
 class _NotificationsPage extends ConsumerWidget {
   const _NotificationsPage();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookingsAsync = ref.watch(myBookingsProvider);
+    final notificationsAsync = ref.watch(notificationItemsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -548,7 +687,7 @@ class _NotificationsPage extends ConsumerWidget {
 
           // List
           Expanded(
-            child: bookingsAsync.when(
+            child: notificationsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
                 child: Column(
@@ -560,33 +699,19 @@ class _NotificationsPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     TextButton(
-                      onPressed: () => ref.invalidate(myBookingsProvider),
+                      onPressed: () =>
+                          ref.invalidate(notificationItemsProvider),
                       child: const Text("Retry"),
                     ),
                   ],
                 ),
               ),
-              data: (bookings) {
-                final acceptedJobs = bookings.where((booking) {
-                  final status = booking.status.toLowerCase();
-                  final hasWorker = (booking.workerId?.trim().isNotEmpty ?? false) ||
-                      (booking.workerName?.trim().isNotEmpty ?? false);
-                  const hiddenStatuses = {
-                    'cancelled',
-                    'completed',
-                  };
-
-                  // Some backends keep status as pending after worker assignment.
-                  // For customer notifications, worker assignment itself means accepted.
-                  return hasWorker && !hiddenStatuses.contains(status);
-                }).toList()
-                  ..sort((a, b) => b.startAt.compareTo(a.startAt));
-
-                if (acceptedJobs.isEmpty) {
+              data: (items) {
+                if (items.isEmpty) {
                   return RefreshIndicator(
                     onRefresh: () async {
-                      ref.invalidate(myBookingsProvider);
-                      await ref.read(myBookingsProvider.future);
+                      ref.invalidate(notificationItemsProvider);
+                      await ref.read(notificationItemsProvider.future);
                     },
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -610,18 +735,22 @@ class _NotificationsPage extends ConsumerWidget {
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    ref.invalidate(myBookingsProvider);
-                    await ref.read(myBookingsProvider.future);
+                    ref.invalidate(notificationItemsProvider);
+                    await ref.read(notificationItemsProvider.future);
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: acceptedJobs.length,
+                    itemCount: items.length,
                     itemBuilder: (context, index) {
-                      final booking = acceptedJobs[index];
-                      final serviceName = booking.serviceTitle ?? 'Cleaning Service';
-                      final workerName = booking.workerName?.trim().isNotEmpty == true
-                          ? booking.workerName!.trim()
-                          : 'A worker';
+                      final item = items[index];
+                      final workerIdText =
+                          item.workerId?.trim().isNotEmpty == true
+                              ? item.workerId!.trim()
+                              : 'Not available';
+                      final bookingIdText =
+                          item.bookingId?.trim().isNotEmpty == true
+                              ? item.bookingId!.trim()
+                              : 'Not available';
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -642,8 +771,8 @@ class _NotificationsPage extends ConsumerWidget {
                               color: Color(0xFF00C9A7),
                             ),
                           ),
-                          title: const Text(
-                            "Job Accepted",
+                          title: Text(
+                            item.title,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
@@ -654,7 +783,7 @@ class _NotificationsPage extends ConsumerWidget {
                             children: [
                               const SizedBox(height: 4),
                               Text(
-                                "$workerName accepted your $serviceName booking.",
+                                item.message,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[600],
@@ -662,7 +791,23 @@ class _NotificationsPage extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "Scheduled: ${_formatSchedule(context, booking.startAt)}",
+                                "Date: ${_formatSchedule(context, item.createdAt)}",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Worker ID: $workerIdText",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Booking ID: $bookingIdText",
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey[500],

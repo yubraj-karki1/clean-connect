@@ -54,19 +54,30 @@ class Cleaner {
 
 class FavouritesNotifier extends Notifier<List<Cleaner>> {
   static const _storageKey = 'favourite_cleaners';
+  bool _isHydrated = false;
+  Future<void>? _hydratingFuture;
 
   @override
   List<Cleaner> build() {
-    _loadFromPrefs();
+    _hydratingFuture ??= _loadFromPrefs();
     return [];
   }
 
   Future<void> _loadFromPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString(_storageKey);
-    if (jsonString != null) {
-      final List decoded = jsonDecode(jsonString);
-      state = decoded.map((e) => Cleaner.fromJson(e)).toList();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(_storageKey);
+      if (jsonString != null && jsonString.isNotEmpty) {
+        final List decoded = jsonDecode(jsonString);
+        state = decoded
+            .whereType<Map<String, dynamic>>()
+            .map(Cleaner.fromJson)
+            .toList();
+      }
+    } catch (_) {
+      state = [];
+    } finally {
+      _isHydrated = true;
     }
   }
 
@@ -76,13 +87,17 @@ class FavouritesNotifier extends Notifier<List<Cleaner>> {
     await prefs.setString(_storageKey, jsonString);
   }
 
-  void toggleFavourite(Cleaner cleaner) {
+  Future<void> toggleFavourite(Cleaner cleaner) async {
+    if (!_isHydrated) {
+      await (_hydratingFuture ??= _loadFromPrefs());
+    }
+
     if (state.contains(cleaner)) {
       state = state.where((c) => c != cleaner).toList();
     } else {
       state = [...state, cleaner];
     }
-    _saveToPrefs();
+    await _saveToPrefs();
   }
 
   bool isFavourite(String cleanerName) {
@@ -92,7 +107,6 @@ class FavouritesNotifier extends Notifier<List<Cleaner>> {
 
 // ========================= PROVIDER =========================
 
-final favouritesProvider =
-    NotifierProvider<FavouritesNotifier, List<Cleaner>>(
+final favouritesProvider = NotifierProvider<FavouritesNotifier, List<Cleaner>>(
   FavouritesNotifier.new,
 );
