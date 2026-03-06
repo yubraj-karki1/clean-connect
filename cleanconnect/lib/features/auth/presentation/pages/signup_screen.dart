@@ -18,6 +18,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _passwordController = TextEditingController();
+  String _selectedRole = 'customer';
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -47,6 +48,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   await ref.read(authViewModelProvider.notifier).register(
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
+        role: _selectedRole,
         password: _passwordController.text,
         phoneNumber: _phoneController.text.trim(), // ADD THIS LINE
         address: _addressController.text.trim(),
@@ -67,7 +69,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       if (next.status == AuthStatus.registered) {
         SnackbarUtils.showSuccess(
           context,
-          next.errorMessage ?? 'Registration successful! Please login.',
+          'Registration successful! Please login.',
         );
         Navigator.of(context).pop();
       } else if (next.status == AuthStatus.error && next.errorMessage != null) {
@@ -199,6 +201,30 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       return 'Address must be at least 5 characters';
                     }
                     return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _selectedRole,
+                  decoration: const InputDecoration(
+                    labelText: 'Account Type',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'customer',
+                      child: Text('Customer'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'worker',
+                      child: Text('Worker'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _selectedRole = value;
+                    });
                   },
                 ),
                 const SizedBox(height: 16),

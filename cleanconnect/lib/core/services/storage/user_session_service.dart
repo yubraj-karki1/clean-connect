@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // SharedPreferences instance provider
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('SharedPreferences must be overridden in main.dart');
+  throw ("u");
 });
 
 // UserSessionService provider
@@ -24,6 +24,7 @@ class UserSessionService {
   static const String _keyUserId = 'user_id';
   static const String _keyUserEmail = 'user_email';
   static const String _keyUserFullName = 'user_full_name';
+  static const String _keyUserRole = 'user_role';
   static const String _keyUserAddress = 'user_address';
   static const String _keyUserPhoneNumber = 'user_phone_number';
   static const String _keyUserBatchId = 'user_batch_id';
@@ -34,6 +35,7 @@ class UserSessionService {
     required String userId,
     required String email,
     required String fullName,
+    String? role,
     required String address,
     String? phoneNumber,
     String? batchId,
@@ -43,6 +45,9 @@ class UserSessionService {
     await _prefs.setString(_keyUserId, userId);
     await _prefs.setString(_keyUserEmail, email);
     await _prefs.setString(_keyUserFullName, fullName);
+    if (role != null) {
+      await _prefs.setString(_keyUserRole, role);
+    }
     await _prefs.setString(_keyUserAddress, address);
 
     if (phoneNumber != null) {
@@ -55,9 +60,6 @@ class UserSessionService {
       await _prefs.setString(_keyUserProfilePicture, profilePicture);
     }
   }
-
-  
-
   // Check if user is logged in
   bool isLoggedIn() {
     return _prefs.getBool(_keyIsLoggedIn) ?? false;
@@ -77,8 +79,10 @@ class UserSessionService {
   String? getCurrentUserFullName() {
     return _prefs.getString(_keyUserFullName);
   }
-
-
+  // Get current user role
+  String? getCurrentUserRole() {
+    return _prefs.getString(_keyUserRole);
+  }
   // Get current user address
   String? getCurrentUserAddress() {
     return _prefs.getString(_keyUserAddress);
@@ -105,6 +109,7 @@ class UserSessionService {
     await _prefs.remove(_keyUserId);
     await _prefs.remove(_keyUserEmail);
     await _prefs.remove(_keyUserFullName);
+    await _prefs.remove(_keyUserRole);
     await _prefs.remove(_keyUserAddress);
     await _prefs.remove(_keyUserPhoneNumber);
     await _prefs.remove(_keyUserBatchId);

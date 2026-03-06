@@ -1,5 +1,11 @@
+import 'package:cleanconnect/core/services/storage/user_session_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
+final storageServiceProvider = Provider<StorageService>((ref){
+  return StorageService(prefs: ref.read(sharedPreferencesProvider));
+});
 class StorageService {
   final SharedPreferences _prefs;
 
@@ -35,4 +41,6 @@ class StorageService {
 
   // Check if key exists
   bool containsKey(String key) => _prefs.containsKey(key);
+
+  Future<dynamic> read(String s) async {}
 }

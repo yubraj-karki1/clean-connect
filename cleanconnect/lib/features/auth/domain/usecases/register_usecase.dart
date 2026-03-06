@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class RegisterUsecaseParams extends Equatable {
   final String fullName;
   final String email;
+  final String role;
   final String address;
   final String password;
   final String? phoneNumber;
@@ -19,6 +20,7 @@ class RegisterUsecaseParams extends Equatable {
   const RegisterUsecaseParams({
     required this.fullName,
     required this.email,
+    required this.role,
     required this.password,
     this.phoneNumber,
     required this.address, 
@@ -30,6 +32,7 @@ class RegisterUsecaseParams extends Equatable {
   List<Object?> get props => [
     fullName,
     email,
+    role,
     password,
     phoneNumber,
     address,
@@ -56,6 +59,7 @@ class RegisterUsecase
     final authEntity = AuthEntity(
       fullName: params.fullName,
       email: params.email,
+      role: params.role,
       password: params.password,
       address: params.address,
       phoneNumber: params.phoneNumber,

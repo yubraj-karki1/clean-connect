@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
@@ -105,7 +107,20 @@ class ApiClient {
       options: options,
     );
   }
-
+  // PATCH request
+  Future<Response> patch(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return _dio.patch(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
+  }
   // DELETE request
   Future<Response> delete(
     String path, {
@@ -140,6 +155,7 @@ class ApiClient {
 // Auth Interceptor to add JWT token to requests
 class _AuthInterceptor extends Interceptor {
   final _storage = const FlutterSecureStorage();
+
   static const String _tokenKey = 'auth_token';
 
   @override
@@ -160,6 +176,10 @@ class _AuthInterceptor extends Interceptor {
     final isAuthEndpoint =
         options.path == ApiEndpoints.login ||
         options.path == ApiEndpoints.signup;
+    if (!isAuthEndpoint) {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_tokenKey);
+      if (token != null && token.isNotEmpty) {
 
     if (!isPublicGet && !isAuthEndpoint) {
       final token = await _storage.read(key: _tokenKey);
@@ -173,6 +193,11 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (err.response?.statusCode == 401) {
+      // Token expired — clear it
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.remove(_tokenKey);
+      });
     // Handle 401 Unauthorized - token expired
     if (err.response?.statusCode == 401) {
       // Clear token and redirect to login

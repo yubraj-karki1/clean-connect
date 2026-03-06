@@ -14,18 +14,6 @@ class OnboardingScreen2 extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Skip Button
-              // Align(
-              //   alignment: Alignment.topRight,
-              //   child: Text(
-              //     "Skip",
-              //     style: TextStyle(
-              //       color: Colors.black.withOpacity(1),
-              //       fontSize: 20,
-              //     ),
-              //   ),
-              // ),
-
               const SizedBox(height: 50),
 
               // Title Text
@@ -70,24 +58,21 @@ class OnboardingScreen2 extends StatelessWidget {
               ),
 
               const SizedBox(height: 10),
-
-              // Get Started Button
               Center(
                     child: SizedBox(
                       width: 200,
                       height: 55,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Add your onPressed action here
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const OnboardingScreen3()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white, // Button background color
+                          backgroundColor: Colors.white, 
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(40), // Rounded edges
+                            borderRadius: BorderRadius.circular(40), 
                           ),
                         ),
                         child: const Text(

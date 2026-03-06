@@ -4,6 +4,7 @@ class AuthApiModel {
   final String? id;
   final String fullName;
   final String email;
+  final String? role;
   final String? phoneNumber;
   final String address;
   final String?password;
@@ -14,6 +15,7 @@ class AuthApiModel {
     this.id,
     required this.fullName,
     required this.email,
+    this.role,
     this.password,
     required this.address,
     this.phoneNumber,
@@ -27,6 +29,8 @@ class AuthApiModel {
 
       "fullName" : fullName,
       "email" : email,
+      "role" : role,
+      "userType" : role,
       "phoneNumber" : phoneNumber,
       "address" : address,
       "password" : password,
@@ -38,6 +42,10 @@ class AuthApiModel {
   //from JSON 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
   return AuthApiModel(
+    id: (json['_id'] ?? json['id']) as String? ?? '', 
+    fullName: json['fullName'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    role: (json['role'] ?? json['userType'] ?? json['accountType']) as String?,
     id: json['_id'] as String? ?? '', 
     fullName: json['fullName'] as String? ?? '',
     email: json['email'] as String? ?? '',
@@ -54,6 +62,7 @@ class AuthApiModel {
       authId: id,
       fullName: fullName,
       email: email,
+      role: role,
       phoneNumber: phoneNumber,
       address: address,
       profilePicture: profilePicture,
@@ -66,6 +75,7 @@ class AuthApiModel {
     return AuthApiModel(
       fullName: entity.fullName,
       email: entity.email,
+      role: entity.role,
       phoneNumber: entity.phoneNumber,
       address: entity.address,
       password: entity.password,
@@ -73,6 +83,6 @@ class AuthApiModel {
       confirmPassword: entity.confirmPassword
     );
   }
-
-
 }
+}
+

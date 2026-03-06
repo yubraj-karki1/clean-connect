@@ -96,7 +96,11 @@ class HiveService {
   }
 
   // LogOut
-  Future<void> logout() async {}
+  Future<void> logout() async {
+    if (_authBox.isOpen) {
+      await _authBox.clear();
+    }
+  }
 
   // Get Current User
   AuthHiveModel? getCurrentUser(String authId) {
