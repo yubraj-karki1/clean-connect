@@ -1,15 +1,22 @@
 import 'package:cleanconnect/core/api/api_client.dart';
-import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class BookService extends ConsumerWidget {
+class BookService extends ConsumerStatefulWidget {
   const BookService({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BookService> createState() => _BookServiceState();
+}
+
+class _BookServiceState extends ConsumerState<BookService> {
+  final Set<String> _acceptingJobIds = {};
+  final Set<String> _completingJobIds = {};
+
+  @override
+  Widget build(BuildContext context) {
     final roleAsync = ref.watch(userRoleProvider);
 
     return roleAsync.when(
@@ -38,7 +45,9 @@ class BookService extends ConsumerWidget {
           ref.invalidate(isWorker ? myWorkerWorkProvider : myBookingsProvider);
           if (isWorker) {
             ref.invalidate(workerCustomerBookingsProvider);
+            await ref.read(workerCustomerBookingsProvider.future);
           }
+          await ref.read((isWorker ? myWorkerWorkProvider : myBookingsProvider).future);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -122,10 +131,16 @@ class BookService extends ConsumerWidget {
                 ),
                 data: (bookings) {
                   final upcoming = bookings
-                      .where((b) => b.status != 'completed' && b.status != 'cancelled')
+                      .where((b) {
+                        final status = b.status.toLowerCase();
+                        return status != 'completed' && status != 'cancelled';
+                      })
                       .toList();
                   final past = bookings
-                      .where((b) => b.status == 'completed' || b.status == 'cancelled')
+                      .where((b) {
+                        final status = b.status.toLowerCase();
+                        return status == 'completed' || status == 'cancelled';
+                      })
                       .toList();
 
                   return Column(
@@ -253,7 +268,10 @@ class BookService extends ConsumerWidget {
       ),
       data: (customerBookings) {
         final pendingCustomerJobs = customerBookings
-            .where((b) => b.status != 'completed' && b.status != 'cancelled')
+            .where((b) {
+              final status = b.status.toLowerCase();
+              return status != 'completed' && status != 'cancelled';
+            })
             .toList();
 
         return Column(
@@ -310,14 +328,18 @@ class BookService extends ConsumerWidget {
     final dateStr = DateFormat('EEE, MMM d').format(booking.startAt);
     final timeStr = DateFormat('h:mm a').format(booking.startAt);
     final location = booking.addressLine1?.trim();
-    final statusLabel = booking.status.replaceAll('_', ' ');
+    final normalizedStatus = booking.status.toLowerCase();
+    final statusLabel = normalizedStatus.replaceAll('_', ' ');
     final capitalizedStatus =
         statusLabel[0].toUpperCase() + statusLabel.substring(1);
 
     Color statusColor;
-    switch (booking.status) {
+    switch (normalizedStatus) {
       case 'confirmed':
       case 'assigned':
+      case 'accepted':
+      case 'in_progress':
+      case 'in-progress':
         statusColor = const Color(0xFF00C9A7);
         break;
       case 'completed':
@@ -503,7 +525,9 @@ class BookService extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () async {
+                  onPressed: _acceptingJobIds.contains(booking.id)
+                      ? null
+                      : () async {
                     final shouldAccept = await showDialog<bool>(
                       context: context,
                       builder: (dialogContext) => AlertDialog(
@@ -530,6 +554,9 @@ class BookService extends ConsumerWidget {
                     }
 
                     try {
+                      if (mounted) {
+                        setState(() => _acceptingJobIds.add(booking.id));
+                      }
                       final apiClient = ref.read(apiClientProvider);
                       await acceptBookingForWorker(
                         apiClient: apiClient,
@@ -539,11 +566,11 @@ class BookService extends ConsumerWidget {
                       ref.invalidate(workerCustomerBookingsProvider);
 
                       if (context.mounted) {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (_) => const DashboardScreen(initialIndex: 1),
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Job accepted"),
+                            backgroundColor: Color(0xFF00C9A7),
                           ),
-                          (route) => false,
                         );
                       }
                     } catch (e) {
@@ -557,12 +584,105 @@ class BookService extends ConsumerWidget {
                           ),
                         );
                       }
+                    } finally {
+                      if (mounted) {
+                        setState(() => _acceptingJobIds.remove(booking.id));
+                      }
                     }
                   },
-                  icon: const Icon(Icons.check_circle_outline, size: 18),
-                  label: const Text("Accept Job"),
+                  icon: _acceptingJobIds.contains(booking.id)
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.check_circle_outline, size: 18),
+                  label: Text(
+                    _acceptingJobIds.contains(booking.id)
+                        ? "Accepting..."
+                        : "Accept Job",
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00C9A7),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (_canWorkerMarkCompleteBooking(isWorker, booking)) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _completingJobIds.contains(booking.id)
+                      ? null
+                      : () async {
+                          try {
+                            if (mounted) {
+                              setState(
+                                () => _completingJobIds.add(booking.id),
+                              );
+                            }
+
+                            final apiClient = ref.read(apiClientProvider);
+                            await completeBookingForWorker(
+                              apiClient: apiClient,
+                              bookingId: booking.id,
+                            );
+                            ref.invalidate(myWorkerWorkProvider);
+                            ref.invalidate(workerCustomerBookingsProvider);
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Job marked as complete"),
+                                  backgroundColor: Color(0xFF00C9A7),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    _friendlyError(
+                                      e.toString().replaceFirst('Exception: ', ''),
+                                    ),
+                                  ),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(
+                                () => _completingJobIds.remove(booking.id),
+                              );
+                            }
+                          }
+                        },
+                  icon: _completingJobIds.contains(booking.id)
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.check_circle_outline, size: 18),
+                  label: Text(
+                    _completingJobIds.contains(booking.id)
+                        ? "Completing..."
+                        : "Mark Complete",
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0BAA83),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -589,6 +709,33 @@ class BookService extends ConsumerWidget {
       'open',
       'available',
     };
-    return acceptableStatuses.contains(booking.status);
+    return acceptableStatuses.contains(booking.status.toLowerCase());
+  }
+
+  bool _canWorkerMarkCompleteBooking(bool isWorker, BookingItem booking) {
+    if (!isWorker) return false;
+    final status = booking.status.toLowerCase();
+    if (status == 'completed' || status == 'cancelled') return false;
+
+    const completableStatuses = {
+      'assigned',
+      'accepted',
+      'confirmed',
+      'in_progress',
+      'in-progress',
+    };
+    return completableStatuses.contains(status);
+  }
+
+  String _friendlyError(String raw) {
+    final text = raw.trim();
+    final lower = text.toLowerCase();
+    if (lower.contains('<!doctype html>') ||
+        lower.contains('cannot post ') ||
+        lower.contains('cannot put ') ||
+        lower.contains('cannot patch ')) {
+      return 'Requested action is not available on server. Please contact admin.';
+    }
+    return text;
   }
 }

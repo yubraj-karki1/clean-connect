@@ -39,6 +39,8 @@ class BookingItem {
   final String? workerName;
   final String? customerId;
   final String? customerName;
+  final String? customerEmail;
+  final String? customerPhone;
   final String? addressLine1;
   final DateTime startAt;
   final DateTime endAt;
@@ -46,6 +48,17 @@ class BookingItem {
   final String notes;
   final Map<String, dynamic> pricing;
   final String? serviceTitle;
+
+  static String? _pickNonEmpty(List<dynamic> values) {
+    for (final value in values) {
+      if (value is Map || value is List) continue;
+      final text = value?.toString().trim();
+      if (text != null && text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text;
+      }
+    }
+    return null;
+  }
 
   BookingItem({
     required this.id,
@@ -55,6 +68,8 @@ class BookingItem {
     this.workerName,
     this.customerId,
     this.customerName,
+    this.customerEmail,
+    this.customerPhone,
     this.addressLine1,
     required this.startAt,
     required this.endAt,
@@ -65,12 +80,25 @@ class BookingItem {
   });
 
   factory BookingItem.fromJson(Map<String, dynamic> json) {
+    final assignmentJson = json['assignment'];
     final workerJson = json['workerId'] ??
         json['assignedWorkerId'] ??
         json['worker'] ??
         json['assignedTo'] ??
         json['acceptedBy'] ??
-        json['assignedWorker'];
+        json['assignedWorker'] ??
+        json['acceptedWorker'] ??
+        json['acceptedByWorker'] ??
+        json['workerDetails'] ??
+        json['assignedWorkerDetails'] ??
+        json['provider'] ??
+        json['providerId'] ??
+        (assignmentJson is Map<String, dynamic>
+            ? assignmentJson['worker'] ??
+                assignmentJson['workerId'] ??
+                assignmentJson['assignedWorker'] ??
+                assignmentJson['acceptedBy']
+            : null);
     final customerJson = json['customerId'] ?? json['customer'];
     final addressJson = json['address'];
     final locationJson = json['location'];
@@ -84,27 +112,48 @@ class BookingItem {
 
     String? extractName(dynamic value) {
       if (value is Map<String, dynamic>) {
-        return value['fullName']?.toString() ??
-            value['name']?.toString() ??
-            value['username']?.toString();
+        final fullName = _pickNonEmpty([
+          value['fullName'],
+          value['name'],
+          value['username'],
+          value['displayName'],
+        ]);
+        if (fullName != null) return fullName;
+
+        final first = _pickNonEmpty([value['firstName']]);
+        final last = _pickNonEmpty([value['lastName']]);
+        if (first != null && last != null) return '$first $last';
+        return first ?? last;
       }
       return null;
     }
 
-    String? pickNonEmpty(List<dynamic> values) {
-      for (final value in values) {
-        if (value is Map || value is List) continue;
-        final text = value?.toString().trim();
-        if (text != null && text.isNotEmpty && text.toLowerCase() != 'null') {
-          return text;
-        }
+    String? extractEmail(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return _pickNonEmpty([
+          value['email'],
+          value['mail'],
+          value['contactEmail'],
+        ]);
+      }
+      return null;
+    }
+
+    String? extractPhone(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return _pickNonEmpty([
+          value['phoneNumber'],
+          value['phone'],
+          value['mobile'],
+          value['contactNumber'],
+        ]);
       }
       return null;
     }
 
     String? fromNested(dynamic value) {
       if (value is Map<String, dynamic>) {
-        final direct = pickNonEmpty([
+        final direct = _pickNonEmpty([
           value['line1'],
           value['addressLine1'],
           value['street'],
@@ -142,7 +191,7 @@ class BookingItem {
       if (customerJson is Map<String, dynamic>) {
         final customerAddress = customerJson['address'];
         if (customerAddress is Map<String, dynamic>) {
-          final direct = pickNonEmpty([
+          final direct = _pickNonEmpty([
             customerAddress['line1'],
             customerAddress['addressLine1'],
             customerAddress['street'],
@@ -152,14 +201,14 @@ class BookingItem {
           if (direct != null) return direct;
 
           final cityState = [
-            pickNonEmpty([customerAddress['city']]),
-            pickNonEmpty([customerAddress['state']]),
-            pickNonEmpty([customerAddress['country']]),
+            _pickNonEmpty([customerAddress['city']]),
+            _pickNonEmpty([customerAddress['state']]),
+            _pickNonEmpty([customerAddress['country']]),
           ].whereType<String>().where((e) => e.isNotEmpty).toList();
           if (cityState.isNotEmpty) return cityState.join(', ');
         }
 
-        final customerDirect = pickNonEmpty([
+        final customerDirect = _pickNonEmpty([
           customerJson['addressLine1'],
           customerJson['address'],
           customerJson['location'],
@@ -170,7 +219,7 @@ class BookingItem {
       }
 
       if (addressJson is Map<String, dynamic>) {
-        final direct = pickNonEmpty([
+        final direct = _pickNonEmpty([
           addressJson['line1'],
           addressJson['addressLine1'],
           addressJson['street'],
@@ -181,15 +230,15 @@ class BookingItem {
         if (direct != null) return direct;
 
         final cityState = [
-          pickNonEmpty([addressJson['city']]),
-          pickNonEmpty([addressJson['state']]),
-          pickNonEmpty([addressJson['country']]),
+          _pickNonEmpty([addressJson['city']]),
+          _pickNonEmpty([addressJson['state']]),
+          _pickNonEmpty([addressJson['country']]),
         ].whereType<String>().where((e) => e.isNotEmpty).toList();
         if (cityState.isNotEmpty) return cityState.join(', ');
       }
 
       if (locationJson is Map<String, dynamic>) {
-        final direct = pickNonEmpty([
+        final direct = _pickNonEmpty([
           locationJson['line1'],
           locationJson['addressLine1'],
           locationJson['street'],
@@ -200,7 +249,7 @@ class BookingItem {
         if (direct != null) return direct;
       }
 
-      return pickNonEmpty([
+      return _pickNonEmpty([
         json['addressLine1'],
         json['address'],
         json['location'],
@@ -219,6 +268,17 @@ class BookingItem {
       workerName: extractName(workerJson),
       customerId: extractId(customerJson),
       customerName: extractName(customerJson),
+      customerEmail: extractEmail(customerJson) ??
+          _pickNonEmpty([
+            json['customerEmail'],
+            json['email'],
+          ]),
+      customerPhone: extractPhone(customerJson) ??
+          _pickNonEmpty([
+            json['customerPhone'],
+            json['phone'],
+            json['phoneNumber'],
+          ]),
       addressLine1: extractLocation(),
       startAt: (DateTime.tryParse(json['startAt'] ?? '') ?? DateTime.now())
           .toLocal(),
@@ -239,22 +299,46 @@ class BookingItem {
 // ========================= PROVIDERS =========================
 
 List<BookingItem> _extractBookingItems(dynamic responseData) {
+  List<BookingItem> fromList(List<dynamic> items) => items
+      .whereType<Map<String, dynamic>>()
+      .map(BookingItem.fromJson)
+      .toList();
+
   if (responseData is List) {
-    return responseData.map((e) => BookingItem.fromJson(e)).toList();
+    return fromList(responseData);
   }
 
   if (responseData is Map<String, dynamic>) {
-    if (responseData['success'] == true) {
-      final dynamic data = responseData['data'] ??
-          responseData['bookings'] ??
-          responseData['results'];
-      if (data is List) {
-        return data.map((e) => BookingItem.fromJson(e)).toList();
+    // Common API envelopes
+    final candidates = [
+      responseData['data'],
+      responseData['bookings'],
+      responseData['results'],
+      responseData['items'],
+      responseData['docs'],
+      responseData['rows'],
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is List) {
+        final parsed = fromList(candidate);
+        if (parsed.isNotEmpty) return parsed;
       }
+      if (candidate is Map<String, dynamic>) {
+        final nested = _extractBookingItems(candidate);
+        if (nested.isNotEmpty) return nested;
+      }
+    }
+
+    // Single booking object response
+    final hasBookingShape =
+        responseData.containsKey('_id') || responseData.containsKey('serviceId');
+    if (hasBookingShape) {
+      return [BookingItem.fromJson(responseData)];
     }
   }
 
-  return <BookingItem>[];
+  return const <BookingItem>[];
 }
 
 /// Fetch available services from backend
@@ -298,12 +382,12 @@ final myBookingsProvider =
       ),
     );
 
-    if (response.data['success'] == true) {
-      final List data = response.data['data'] ?? [];
-      return data.map((e) => BookingItem.fromJson(e)).toList();
-    } else {
+    if (response.data is Map<String, dynamic> &&
+        response.data['success'] == false) {
       throw Exception(response.data['message'] ?? 'Failed to load bookings');
     }
+
+    return _extractBookingItems(response.data);
   } on DioException catch (e) {
     throw Exception(e.response?.data['message'] ?? 'Bookings fetch failed');
   }
@@ -328,9 +412,13 @@ final myWorkerWorkProvider =
 
   final apiClient = ref.read(apiClientProvider);
 
-  try {
+  Future<List<BookingItem>> tryEndpoint(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     final response = await apiClient.get(
-      ApiEndpoints.myBookings,
+      path,
+      queryParameters: queryParameters,
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
@@ -338,20 +426,89 @@ final myWorkerWorkProvider =
       ),
     );
 
-    if (response.data['success'] == true) {
-      final bookings = _extractBookingItems(response.data);
-      final hasWorkerIds = bookings.any((b) => (b.workerId ?? '').isNotEmpty);
-
-      if (!hasWorkerIds || currentUserId == null || currentUserId.isEmpty) {
-        return <BookingItem>[];
-      }
-
-      return bookings.where((b) => b.workerId == currentUserId).toList();
-    } else {
-      throw Exception(response.data['message'] ?? 'Failed to load work items');
+    if (response.data is Map<String, dynamic> &&
+        response.data['success'] == false) {
+      throw Exception(
+        (response.data['message'] ?? 'Failed to load work items').toString(),
+      );
     }
-  } on DioException catch (e) {
-    throw Exception(e.response?.data['message'] ?? 'Work fetch failed');
+
+    return _extractBookingItems(response.data);
+  }
+
+  final attempts = <({String path, Map<String, dynamic>? query})>[
+    (path: ApiEndpoints.myBookings, query: null),
+    (path: ApiEndpoints.allBookings, query: const {'scope': 'my-work'}),
+    (path: ApiEndpoints.allBookings, query: const {'scope': 'assigned'}),
+    (path: ApiEndpoints.allBookings, query: const {'worker': 'me'}),
+    (path: ApiEndpoints.allBookings, query: const {'assignedToMe': true}),
+  ];
+
+  final merged = <BookingItem>[];
+  final seenIds = <String>{};
+  final errors = <String>[];
+  var hadSuccess = false;
+
+  for (final attempt in attempts) {
+    try {
+      final items = await tryEndpoint(
+        attempt.path,
+        queryParameters: attempt.query,
+      );
+      hadSuccess = true;
+      for (final booking in items) {
+        if (booking.id.isEmpty) continue;
+        if (seenIds.add(booking.id)) {
+          merged.add(booking);
+        }
+      }
+    } catch (e) {
+      errors.add(
+        '${attempt.path}${attempt.query != null ? " ${attempt.query}" : ""}: $e',
+      );
+    }
+  }
+
+  if (!hadSuccess) {
+    throw Exception(
+      errors.isNotEmpty
+          ? 'Work fetch failed. ${errors.first}'
+          : 'Work fetch failed',
+    );
+  }
+
+  try {
+    // 1) Strong match: workerId exactly equals current user id.
+    if (currentUserId != null && currentUserId.isNotEmpty) {
+      final exactMatches = merged
+          .where((b) => (b.workerId ?? '').trim() == currentUserId.trim())
+          .toList();
+
+      // When we know current user id, avoid broad fallback to prevent
+      // unaccepted/open jobs from leaking into "My Jobs" after refresh.
+      return exactMatches;
+    }
+
+    // 2) Fallback only when user_id is unavailable in local session.
+    // Keep assigned-like statuses and exclude open pool states.
+    final scopedWorkerJobs = merged
+        .where((b) {
+          final status = b.status.toLowerCase();
+          const assignedLikeStatuses = {
+            'assigned',
+            'accepted',
+            'in_progress',
+            'in-progress',
+            'completed',
+            'cancelled',
+          };
+          return assignedLikeStatuses.contains(status);
+        })
+        .toList();
+
+    return scopedWorkerJobs;
+  } on Exception {
+    rethrow;
   }
 });
 
@@ -433,7 +590,18 @@ final workerCustomerBookingsProvider =
   }
 
   final visible = merged
-      .where((b) => b.status != 'cancelled' && b.status != 'completed')
+      .where((b) {
+        final status = b.status.toLowerCase();
+        const openStatuses = {
+          'pending',
+          'pending_payment',
+          'confirmed',
+          'open',
+          'available',
+        };
+        final hasWorker = (b.workerId ?? '').trim().isNotEmpty;
+        return openStatuses.contains(status) && !hasWorker;
+      })
       .toList();
 
   if (visible.isNotEmpty) {
@@ -747,6 +915,19 @@ Future<void> acceptBookingForWorker({
         throw Exception(data['message'] ?? 'Failed to accept job');
       }
 
+      // Ensure assignment actually persisted before returning success.
+      final assignmentPersisted = await _isBookingAssignedToWorker(
+        apiClient: apiClient,
+        token: token,
+        bookingId: bookingId,
+        workerId: userId,
+      );
+      // If verification explicitly says "not assigned", try next endpoint.
+      // If verification is inconclusive (null), trust this successful response.
+      if (assignmentPersisted == false) {
+        continue;
+      }
+
       await _notifyCustomerOnJobAccepted(
         apiClient: apiClient,
         token: token,
@@ -781,6 +962,49 @@ Future<void> acceptBookingForWorker({
   throw Exception(bestError ?? 'Could not accept job with available endpoints');
 }
 
+Future<bool?> _isBookingAssignedToWorker({
+  required ApiClient apiClient,
+  required String token,
+  required String bookingId,
+  required String? workerId,
+}) async {
+  try {
+    final response = await apiClient.get(
+      ApiEndpoints.bookingById(bookingId),
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      ),
+    );
+
+    final bookingMap = _extractSingleBookingMap(response.data);
+    if (bookingMap == null) return null;
+    final booking = BookingItem.fromJson(bookingMap);
+
+    final status = booking.status.toLowerCase();
+    const acceptedStatuses = {
+      'assigned',
+      'accepted',
+      'in_progress',
+      'in-progress',
+      'confirmed',
+      'completed',
+    };
+
+    final assignedWorkerId = (booking.workerId ?? '').trim();
+    final isAssignedToCurrentWorker = workerId != null &&
+        workerId.trim().isNotEmpty &&
+        assignedWorkerId == workerId.trim();
+
+    return isAssignedToCurrentWorker || acceptedStatuses.contains(status);
+  } catch (_) {
+    // Inconclusive verification (e.g. bookingById endpoint mismatch).
+    // We should not fail a successful assignment call because of this.
+    return null;
+  }
+}
+
 Future<void> _notifyCustomerOnJobAccepted({
   required ApiClient apiClient,
   required String token,
@@ -788,6 +1012,8 @@ Future<void> _notifyCustomerOnJobAccepted({
   required String? workerId,
 }) async {
   try {
+    final prefs = await SharedPreferences.getInstance();
+    final workerName = prefs.getString('user_full_name');
     final bookingResponse = await apiClient.get(
       ApiEndpoints.bookingById(bookingId),
       options: Options(
@@ -811,18 +1037,25 @@ Future<void> _notifyCustomerOnJobAccepted({
     final payload = <String, dynamic>{
       'userId': customerId,
       'recipientId': customerId,
+      'recipient': customerId,
       'toUserId': customerId,
+      'to': customerId,
       'customerId': customerId,
       'bookingId': bookingId,
       if (workerId != null && workerId.isNotEmpty) 'workerId': workerId,
+      if (workerName != null && workerName.trim().isNotEmpty)
+        'workerName': workerName.trim(),
       'type': 'job_accepted',
       'title': 'Job Accepted',
-      'message': 'A worker accepted your $serviceName booking.',
+      'message':
+          '${workerName != null && workerName.trim().isNotEmpty ? workerName.trim() : 'A worker'} accepted your $serviceName booking.',
       'data': {
         'bookingId': bookingId,
         'type': 'job_accepted',
         'customerId': customerId,
         if (workerId != null && workerId.isNotEmpty) 'workerId': workerId,
+        if (workerName != null && workerName.trim().isNotEmpty)
+          'workerName': workerName.trim(),
       },
     };
 
@@ -834,6 +1067,11 @@ Future<void> _notifyCustomerOnJobAccepted({
           ),
       () => apiClient.post(
             '/notifications/send',
+            data: payload,
+            options: Options(headers: {'Authorization': 'Bearer $token'}),
+          ),
+      () => apiClient.post(
+            '/notifications/create',
             data: payload,
             options: Options(headers: {'Authorization': 'Bearer $token'}),
           ),

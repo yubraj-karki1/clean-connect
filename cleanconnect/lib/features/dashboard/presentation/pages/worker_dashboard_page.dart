@@ -1,6 +1,7 @@
 import 'package:cleanconnect/core/api/api_client.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/profile_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +15,63 @@ class WorkerDashboardPage extends ConsumerStatefulWidget {
       _WorkerDashboardPageState();
 }
 
+class _ResolvedCustomerData {
+  final String? name;
+  final String? email;
+  final String? phone;
+  final String? address;
+
+  const _ResolvedCustomerData({
+    this.name,
+    this.email,
+    this.phone,
+    this.address,
+  });
+
+  bool get hasAny =>
+      _isFilled(name) || _isFilled(email) || _isFilled(phone) || _isFilled(address);
+
+  bool get isComplete =>
+      _isFilled(name) && _isFilled(email) && _isFilled(phone) && _isFilled(address);
+
+  _ResolvedCustomerData merge({
+    String? name,
+    String? email,
+    String? phone,
+    String? address,
+  }) {
+    return _ResolvedCustomerData(
+      name: _firstFilled(this.name, name),
+      email: _firstFilled(this.email, email),
+      phone: _firstFilled(this.phone, phone),
+      address: _firstFilled(this.address, address),
+    );
+  }
+
+  _ResolvedCustomerData get normalized => _ResolvedCustomerData(
+        name: _fallback(name),
+        email: _fallback(email),
+        phone: _fallback(phone),
+        address: _fallback(address),
+      );
+
+  static bool _isFilled(String? value) {
+    final v = value?.trim();
+    return v != null &&
+        v.isNotEmpty &&
+        v.toLowerCase() != 'null' &&
+        v.toLowerCase() != 'not available';
+  }
+
+  static String _fallback(String? value) => _isFilled(value) ? value!.trim() : 'Not available';
+
+  static String? _firstFilled(String? current, String? incoming) {
+    if (_isFilled(current)) return current!.trim();
+    if (_isFilled(incoming)) return incoming!.trim();
+    return current;
+  }
+}
+
 class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
   int _menuIndex = 0;
   int _myJobsTab = 0;
@@ -23,6 +81,7 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
   final Set<String> _acceptingJobIds = {};
   final Set<String> _completingJobIds = {};
   final Map<String, BookingItem> _locallyAcceptedJobs = {};
+  final Map<String, Future<_ResolvedCustomerData>> _customerDetailsFutures = {};
 
   @override
   void dispose() {
@@ -36,6 +95,11 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
     final myJobsAsync = ref.watch(myWorkerWorkProvider);
     final profileAsync = ref.watch(profileProvider);
     final isMobile = MediaQuery.of(context).size.width < 900;
+    final notificationCount = availableAsync.when(
+      data: (jobs) => jobs.length,
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F9),
@@ -58,25 +122,39 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
           : null,
       drawer: isMobile
           ? Drawer(
-              child:
-                  SafeArea(child: _buildSidebar(profileAsync, isMobile: true)))
+              child: SafeArea(
+                child: _buildSidebar(
+                  profileAsync,
+                  isMobile: true,
+                  notificationCount: notificationCount,
+                ),
+              ),
+            )
           : null,
       body: SafeArea(
         top: !isMobile,
         child: Row(
           children: [
-            if (!isMobile) _buildSidebar(profileAsync, isMobile: false),
+            if (!isMobile)
+              _buildSidebar(
+                profileAsync,
+                isMobile: false,
+                notificationCount: notificationCount,
+              ),
             Expanded(
               child: Column(
                 children: [
-                  if (!isMobile) _buildTopBar(),
+                  if (!isMobile) _buildTopBar(notificationCount),
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.all(isMobile ? 12 : 16),
                       child: _menuIndex == 0
                           ? _buildAvailableJobs(availableAsync,
                               isMobile: isMobile)
-                          : _buildMyJobs(myJobsAsync, isMobile: isMobile),
+                          : _menuIndex == 1
+                              ? _buildMyJobs(myJobsAsync, isMobile: isMobile)
+                              : _buildNotifications(availableAsync,
+                                  isMobile: isMobile),
                     ),
                   ),
                 ],
@@ -88,8 +166,11 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
     );
   }
 
-  Widget _buildSidebar(AsyncValue<dynamic> profileAsync,
-      {required bool isMobile}) {
+  Widget _buildSidebar(
+    AsyncValue<dynamic> profileAsync, {
+    required bool isMobile,
+    required int notificationCount,
+  }) {
     final initials = profileAsync.when(
       loading: () => 'W',
       error: (_, __) => 'W',
@@ -145,6 +226,16 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
             setState(() => _menuIndex = 1);
             if (isMobile) Navigator.of(context).pop();
           }),
+          _menuTile(
+            Icons.notifications_none,
+            'Notifications',
+            _menuIndex == 2,
+            () {
+              setState(() => _menuIndex = 2);
+              if (isMobile) Navigator.of(context).pop();
+            },
+            badgeCount: notificationCount,
+          ),
           const Spacer(),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -173,7 +264,12 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
   }
 
   Widget _menuTile(
-      IconData icon, String label, bool selected, VoidCallback onTap) {
+    IconData icon,
+    String label,
+    bool selected,
+    VoidCallback onTap, {
+    int badgeCount = 0,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: InkWell(
@@ -190,9 +286,33 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
             children: [
               Icon(icon, size: 18, color: const Color(0xFF374151)),
               const SizedBox(width: 10),
-              Text(label,
+              Expanded(
+                child: Text(
+                  label,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w500, fontSize: 14)),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (badgeCount > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0BAA83),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$badgeCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -200,7 +320,7 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
     );
   }
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar(int notificationCount) {
     return Container(
       height: 56,
       decoration: const BoxDecoration(
@@ -210,10 +330,47 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
         alignment: Alignment.centerRight,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: TextButton.icon(
-            onPressed: _handleLogout,
-            icon: const Icon(Icons.logout, size: 16, color: Colors.red),
-            label: const Text('Logout', style: TextStyle(color: Colors.red)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    onPressed: () => setState(() => _menuIndex = 2),
+                    icon: const Icon(Icons.notifications_none,
+                        color: Color(0xFF0F172A)),
+                  ),
+                  if (notificationCount > 0)
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '$notificationCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 4),
+              TextButton.icon(
+                onPressed: _handleLogout,
+                icon: const Icon(Icons.logout, size: 16, color: Colors.red),
+                label: const Text('Logout', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
         ),
       ),
@@ -230,7 +387,10 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
           () => ref.invalidate(workerCustomerBookingsProvider)),
       data: (jobs) {
         final openJobs = jobs
-            .where((e) => e.status != 'completed' && e.status != 'cancelled')
+            .where((e) {
+              final status = e.status.toLowerCase();
+              return status != 'completed' && status != 'cancelled';
+            })
             .where((e) => !_locallyAcceptedJobs.containsKey(e.id))
             .toList();
         final serviceGroups = <String, int>{};
@@ -389,9 +549,14 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
         final allJobs = mergedJobs.values.toList();
 
         final active = allJobs
-            .where((b) => b.status != 'completed' && b.status != 'cancelled')
+            .where((b) {
+              final status = b.status.toLowerCase();
+              return status != 'completed' && status != 'cancelled';
+            })
             .toList();
-        final completed = allJobs.where((b) => b.status == 'completed').toList();
+        final completed = allJobs
+            .where((b) => b.status.toLowerCase() == 'completed')
+            .toList();
         final visible = _myJobsTab == 0 ? active : completed;
 
         return Column(
@@ -436,6 +601,341 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildNotifications(AsyncValue<List<BookingItem>> availableAsync,
+      {required bool isMobile}) {
+    return availableAsync.when(
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF00C9A7))),
+      error: (error, _) => _errorView(
+        error.toString().replaceFirst('Exception: ', ''),
+        () => ref.invalidate(workerCustomerBookingsProvider),
+      ),
+      data: (jobs) {
+        final notifications = [...jobs]
+          ..sort((a, b) => b.startAt.compareTo(a.startAt));
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Notifications',
+              style: TextStyle(
+                fontSize: isMobile ? 30 : 38,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Customer booking requests with full contact details.',
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 14),
+            if (notifications.isEmpty)
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    'No customer booking notifications',
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 16),
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(workerCustomerBookingsProvider);
+                    await ref.read(workerCustomerBookingsProvider.future);
+                  },
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: notifications.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) =>
+                        _notificationCard(notifications[index]),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _notificationCard(BookingItem booking) {
+    final cacheKey =
+        '${booking.id}|${booking.customerId ?? ''}|${booking.startAt.millisecondsSinceEpoch}';
+    final detailsFuture = _customerDetailsFutures.putIfAbsent(
+      cacheKey,
+      () => _fetchCustomerDetails(booking),
+    );
+
+    final fallbackName = booking.customerName?.trim().isNotEmpty == true
+        ? booking.customerName!.trim()
+        : 'Not available';
+    final fallbackEmail = booking.customerEmail?.trim().isNotEmpty == true
+        ? booking.customerEmail!.trim()
+        : 'Not available';
+    final fallbackPhone = booking.customerPhone?.trim().isNotEmpty == true
+        ? booking.customerPhone!.trim()
+        : 'Not available';
+    final fallbackAddress = booking.addressLine1?.trim().isNotEmpty == true
+        ? booking.addressLine1!.trim()
+        : 'Not available';
+
+    return FutureBuilder<_ResolvedCustomerData>(
+      future: detailsFuture,
+      builder: (context, snapshot) {
+        final resolved = snapshot.data;
+        final customerName = resolved?.name ?? fallbackName;
+        final customerEmail = resolved?.email ?? fallbackEmail;
+        final customerPhone = resolved?.phone ?? fallbackPhone;
+        final customerAddress = resolved?.address ?? fallbackAddress;
+
+        return _notificationCardContent(
+          booking: booking,
+          customerName: customerName,
+          customerEmail: customerEmail,
+          customerPhone: customerPhone,
+          customerAddress: customerAddress,
+        );
+      },
+    );
+  }
+
+  Widget _notificationCardContent({
+    required BookingItem booking,
+    required String customerName,
+    required String customerEmail,
+    required String customerPhone,
+    required String customerAddress,
+  }) {
+    final schedule =
+        '${DateFormat('EEE, MMM d').format(booking.startAt)} at ${DateFormat('hh:mm a').format(booking.startAt)}';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.notifications_active_outlined,
+                  color: Color(0xFF0BAA83)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'New ${booking.serviceTitle ?? 'Cleaning Service'} booking',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _detailLine(Icons.person_outline, 'Customer Name', customerName),
+          _detailLine(Icons.phone_outlined, 'Phone', customerPhone),
+          _detailLine(Icons.email_outlined, 'Email', customerEmail),
+          _detailLine(Icons.location_on_outlined, 'Address', customerAddress),
+          _detailLine(Icons.schedule_outlined, 'Schedule', schedule),
+        ],
+      ),
+    );
+  }
+
+  Future<_ResolvedCustomerData> _fetchCustomerDetails(BookingItem booking) async {
+    final initial = _ResolvedCustomerData(
+      name: booking.customerName,
+      email: booking.customerEmail,
+      phone: booking.customerPhone,
+      address: booking.addressLine1,
+    );
+    if (initial.isComplete) {
+      return initial.normalized;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token == null || token.isEmpty) {
+      return initial.normalized;
+    }
+
+    final apiClient = ref.read(apiClientProvider);
+    var current = initial;
+    String? customerId = booking.customerId;
+
+    try {
+      final bookingResponse = await apiClient.get(
+        '/bookings/${booking.id}',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      final bookingData = _extractMap(bookingResponse.data);
+      if (bookingData != null) {
+        final customerNode = bookingData['customer'] ??
+            bookingData['customerId'] ??
+            bookingData['bookedBy'] ??
+            bookingData['createdBy'] ??
+            bookingData['user'];
+
+        if (customerNode is Map<String, dynamic>) {
+          customerId = customerNode['_id']?.toString() ??
+              customerNode['id']?.toString() ??
+              customerId;
+          current = current.merge(
+            name: _pickFirst([
+              customerNode['fullName'],
+              customerNode['name'],
+              customerNode['username'],
+            ]),
+            email: _pickFirst([
+              customerNode['email'],
+              customerNode['mail'],
+            ]),
+            phone: _pickFirst([
+              customerNode['phoneNumber'],
+              customerNode['phone'],
+              customerNode['mobile'],
+              customerNode['contactNumber'],
+            ]),
+            address: _extractAddressFromMap(customerNode) ??
+                _extractAddressFromMap(bookingData),
+          );
+        } else if (customerNode != null) {
+          customerId = customerNode.toString();
+          current = current.merge(
+            address: _extractAddressFromMap(bookingData),
+          );
+        } else {
+          current = current.merge(
+            address: _extractAddressFromMap(bookingData),
+          );
+        }
+      }
+    } catch (_) {}
+
+    if (current.isComplete) {
+      return current.normalized;
+    }
+
+    if (customerId == null || customerId.trim().isEmpty) {
+      return current.normalized;
+    }
+
+    final id = customerId.trim();
+    final attempts = <String>[
+      '/users/$id',
+      '/users/profile/$id',
+      '/users/$id/profile',
+      '/users/details/$id',
+    ];
+
+    for (final path in attempts) {
+      try {
+        final response = await apiClient.get(
+          path,
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
+        final userData = _extractMap(response.data);
+        if (userData == null) continue;
+
+        current = current.merge(
+          name: _pickFirst([
+            userData['fullName'],
+            userData['name'],
+            userData['username'],
+          ]),
+          email: _pickFirst([
+            userData['email'],
+            userData['mail'],
+          ]),
+          phone: _pickFirst([
+            userData['phoneNumber'],
+            userData['phone'],
+            userData['mobile'],
+            userData['contactNumber'],
+          ]),
+          address: _extractAddressFromMap(userData),
+        );
+
+        if (current.hasAny) {
+          break;
+        }
+      } catch (_) {}
+    }
+
+    return current.normalized;
+  }
+
+  Map<String, dynamic>? _extractMap(dynamic raw) {
+    if (raw is Map<String, dynamic>) {
+      final nested = raw['data'] ?? raw['user'] ?? raw['booking'] ?? raw;
+      if (nested is Map<String, dynamic>) return nested;
+    }
+    return null;
+  }
+
+  String? _pickFirst(List<dynamic> values) {
+    for (final value in values) {
+      if (value is Map || value is List) continue;
+      final text = value?.toString().trim();
+      if (text != null && text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text;
+      }
+    }
+    return null;
+  }
+
+  String? _extractAddressFromMap(Map<String, dynamic> map) {
+    final addressNode = map['address'];
+    if (addressNode is Map<String, dynamic>) {
+      final direct = _pickFirst([
+        addressNode['line1'],
+        addressNode['addressLine1'],
+        addressNode['street'],
+        addressNode['fullAddress'],
+        addressNode['formattedAddress'],
+      ]);
+      if (direct != null) return direct;
+    }
+
+    return _pickFirst([
+      map['addressLine1'],
+      map['address'],
+      map['location'],
+      map['city'],
+      map['area'],
+    ]);
+  }
+
+  Widget _detailLine(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFF64748B)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$label: $value',
+              style: const TextStyle(
+                color: Color(0xFF334155),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -787,6 +1287,8 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
           workerId: booking.workerId,
           workerName: booking.workerName,
           customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: booking.customerPhone,
           addressLine1: booking.addressLine1,
           startAt: booking.startAt,
           endAt: booking.endAt,
@@ -890,6 +1392,8 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
     );
 
     if (shouldLogout != true) return;
+
+    _customerDetailsFutures.clear();
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
