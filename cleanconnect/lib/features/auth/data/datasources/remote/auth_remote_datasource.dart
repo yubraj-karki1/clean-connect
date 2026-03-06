@@ -5,17 +5,15 @@ import 'package:cleanconnect/features/auth/data/datasources/auth_datasouce.dart'
 import 'package:cleanconnect/features/auth/data/models/auth_api_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// ========create a provider=============
 import 'package:shared_preferences/shared_preferences.dart';
-
 final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref) {
   return AuthRemoteDatasource(
     apiClient: ref.read(apiClientProvider),
     userSessionService: ref.read(userSessionServiceProvider),
   );
 });
-
 class AuthRemoteDatasource implements IAuthRemoteDataSource {
-
 // create a provider
 final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref){
   return AuthRemoteDatasource(
@@ -76,6 +74,7 @@ Future<AuthApiModel> login(String email, String password) async {
         fullName: user.fullName,
         role: user.role,
         address: user.address,
+
       final data = response.data['data'] as Map<String, dynamic>;
       
       final user = AuthApiModel.fromJson(data);
@@ -136,6 +135,10 @@ Future<AuthApiModel> register(AuthApiModel user) async {
       final registerUser = AuthApiModel.fromJson(data);
       return registerUser;
     }
+    return user;  
+  }
+}
     return user;
   }
 }
+
