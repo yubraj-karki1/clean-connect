@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int initialIndex;
+
   const DashboardScreen({super.key, this.initialIndex = 0});
 
   @override
@@ -27,9 +28,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadRole() async {
     final prefs = await SharedPreferences.getInstance();
     final role = (prefs.getString('user_role') ?? '').toLowerCase();
-    if (!mounted) {
-      return;
-    }
+
+    if (!mounted) return;
+
     setState(() {
       _isWorker = role == 'worker';
       if (_isWorker && _selectedIndex == 0) {
@@ -38,7 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  List<Widget> LstBottomScreen = [
+  final List<Widget> lstBottomScreen = [
     const Home(),
     const BookService(),
     const Favourite(),
@@ -48,34 +49,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LstBottomScreen[_selectedIndex],
+      body: lstBottomScreen[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
+        currentIndex: _selectedIndex,
         items: [
           const BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home'
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-          icon: Icon(Icons.book_online),
-          label: _isWorker ? 'My Work' : 'Bookings'
+            icon: const Icon(Icons.book_online),
+            label: _isWorker ? 'My Work' : 'Bookings',
           ),
           const BottomNavigationBarItem(
-          icon: Icon(Icons.favorite),
-          label: 'Favourites'
+            icon: Icon(Icons.favorite),
+            label: 'Favourites',
           ),
           const BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile'
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
-        currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
           });
         },
-        ),
+      ),
     );
   }
 }

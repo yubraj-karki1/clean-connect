@@ -72,8 +72,11 @@ class Favourite extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.favorite_border,
-                            size: 64, color: Colors.grey[350]),
+                        Icon(
+                          Icons.favorite_border,
+                          size: 64,
+                          color: Colors.grey[350],
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           "No favourites yet",
@@ -110,10 +113,15 @@ class Favourite extends ConsumerWidget {
   }
 
   Widget _buildCleanerCard(
-      Cleaner cleaner, WidgetRef ref, BuildContext context) {
+    Cleaner cleaner,
+    WidgetRef ref,
+    BuildContext context,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       elevation: 0,
       color: Theme.of(context).colorScheme.surface,
       child: Padding(
@@ -135,7 +143,11 @@ class Favourite extends ConsumerWidget {
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.person, size: 40, color: Colors.grey),
+                  child: const Icon(
+                    Icons.person,
+                    size: 40,
+                    color: Colors.grey,
+                  ),
                 ),
               ),
             ),

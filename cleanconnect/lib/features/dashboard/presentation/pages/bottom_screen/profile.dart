@@ -417,7 +417,6 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-
   Widget _buildThemeChip({
     required BuildContext context,
     required String label,
@@ -532,3 +531,4 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 }
+
