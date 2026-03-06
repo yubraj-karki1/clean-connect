@@ -1,0 +1,97 @@
+import 'package:cleanconnect/features/onboarding/presentation/pages/onboarding_screen2.dart';
+import 'package:flutter/material.dart';
+
+class OnboardingScreen1 extends StatelessWidget {
+  const OnboardingScreen1({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF5A98A3),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 50),
+              // Title Text
+              const Text(
+                "Clean Home",
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const Text(
+                "Clean Life.",
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              // Subtitle Text
+              const Text(
+                "Book Cleaners at the Comfort \n of you home.",
+                style: TextStyle(
+                  fontSize: 18,
+                  height: 1.5,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 0),
+
+              // Main Illustration Image
+              Expanded(
+                child: Center(
+                  child: Image.asset(
+                    "assets/images/onboard.jpg",  
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Get Started Button
+              Center(
+                    child: SizedBox(
+                      width: 200,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OnboardingScreen2()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white, 
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(40), 
+                          ),
+                        ),
+                        child: const Text(
+                          "Next",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
