@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cleanconnect/app/theme/app_colors.dart';
 
-AppBarTheme getAppBarTheme() {
+AppBarTheme getAppBarTheme({bool isDark = false}) {
   return AppBarTheme(
-    backgroundColor: AppColors.surface,
-    foregroundColor: AppColors.textPrimary,
+    backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+    foregroundColor: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
     surfaceTintColor: Colors.transparent,
     scrolledUnderElevation: 0,
     elevation: 0,
     centerTitle: true,
-    titleTextStyle: const TextStyle(
+    titleTextStyle: TextStyle(
       fontSize: 20,
-      color: AppColors.textPrimary,
+      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
       fontWeight: FontWeight.w700,
       fontFamily: 'OpenSans-Bold',
     ),
-    iconTheme: const IconThemeData(
-      color: AppColors.textPrimary,
+    iconTheme: IconThemeData(
+      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
       size: 22,
     ),
   );

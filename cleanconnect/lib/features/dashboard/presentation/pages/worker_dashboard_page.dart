@@ -1,4 +1,5 @@
 import 'package:cleanconnect/core/api/api_client.dart';
+import 'package:cleanconnect/core/providers/theme_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/profile_provider.dart';
 import 'package:dio/dio.dart';
@@ -153,8 +154,13 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
                               isMobile: isMobile)
                           : _menuIndex == 1
                               ? _buildMyJobs(myJobsAsync, isMobile: isMobile)
-                              : _buildNotifications(availableAsync,
-                                  isMobile: isMobile),
+                              : _menuIndex == 2
+                                  ? _buildNotifications(availableAsync,
+                                      isMobile: isMobile)
+                                  : _buildWorkerProfile(
+                                      profileAsync,
+                                      isMobile: isMobile,
+                                    ),
                     ),
                   ),
                 ],
@@ -236,6 +242,10 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
             },
             badgeCount: notificationCount,
           ),
+          _menuTile(Icons.person_outline, 'Profile', _menuIndex == 3, () {
+            setState(() => _menuIndex = 3);
+            if (isMobile) Navigator.of(context).pop();
+          }),
           const Spacer(),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -602,6 +612,219 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
         );
       },
     );
+  }
+
+  Widget _buildWorkerProfile(
+    AsyncValue<dynamic> profileAsync, {
+    required bool isMobile,
+  }) {
+    return profileAsync.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: Color(0xFF00C9A7)),
+      ),
+      error: (error, _) => _errorView(
+        error.toString().replaceFirst('Exception: ', ''),
+        () => ref.invalidate(profileProvider),
+      ),
+      data: (user) {
+        final phone = _formatPhoneNumber((user.phone ?? '').toString());
+        final address = ((user.address ?? '').toString().trim().isEmpty)
+            ? 'Not provided'
+            : user.address.toString().trim();
+        final email = ((user.email ?? '').toString().trim().isEmpty)
+            ? 'Not provided'
+            : user.email.toString().trim();
+        final name = ((user.fullName ?? '').toString().trim().isEmpty)
+            ? 'Worker'
+            : user.fullName.toString().trim();
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(isMobile ? 18 : 22),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF11B983), Color(0xFF22D3EE)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Colors.white.withValues(alpha: 0.9),
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : 'W',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0B9A74),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isMobile ? 22 : 28,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Manage your worker profile',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              _profileInfoCard(Icons.email_outlined, 'Email', email),
+              _profileInfoCard(Icons.phone_outlined, 'Phone', phone),
+              _profileInfoCard(Icons.location_on_outlined, 'Address', address),
+              const SizedBox(height: 10),
+              _themeSegmentControl(),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _handleLogout,
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: const Text(
+                    'Logout',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 50),
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _profileInfoCard(IconData icon, String label, String value) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00D2A1).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: const Color(0xFF00D2A1)),
+        ),
+        title: Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+        ),
+        subtitle: Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  Widget _themeSegmentControl() {
+    final selectedMode = ref.watch(themeModeProvider);
+
+    Widget chip(String label, IconData icon, ThemeMode mode) {
+      final selected = selectedMode == mode;
+      return Expanded(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => ref.read(themeModeProvider.notifier).setThemeMode(mode),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? const Color(0xFF00D2A1).withValues(alpha: 0.16)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: selected ? const Color(0xFF00D2A1) : const Color(0xFFD6DEE6),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 16, color: const Color(0xFF00D2A1)),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            chip('Light', Icons.light_mode, ThemeMode.light),
+            const SizedBox(width: 8),
+            chip('Dark', Icons.dark_mode, ThemeMode.dark),
+            const SizedBox(width: 8),
+            chip('Auto', Icons.brightness_auto, ThemeMode.system),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatPhoneNumber(String rawPhone) {
+    if (rawPhone.trim().isEmpty) return 'Not provided';
+
+    final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 13 && digits.startsWith('977')) {
+      final local = digits.substring(3);
+      if (local.length == 10) {
+        return '+977 ${local.substring(0, 3)}-${local.substring(3)}';
+      }
+    }
+
+    if (digits.length == 10) {
+      if (digits.startsWith('98') || digits.startsWith('97')) {
+        return '${digits.substring(0, 3)}-${digits.substring(3)}';
+      }
+      return '${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}';
+    }
+
+    return rawPhone;
   }
 
   Widget _buildNotifications(AsyncValue<List<BookingItem>> availableAsync,

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:cleanconnect/app/theme/app_colors.dart';
 
-InputDecorationTheme getTextFieldTheme() {
+InputDecorationTheme getTextFieldTheme({bool isDark = false}) {
   return InputDecorationTheme(
     filled: true,
-    fillColor: AppColors.inputFill,
+    fillColor: isDark ? AppColors.darkInputFill : AppColors.inputFill,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.border),
+      borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.border),
+      borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -26,15 +26,15 @@ InputDecorationTheme getTextFieldTheme() {
       borderRadius: BorderRadius.circular(12),
       borderSide: const BorderSide(color: AppColors.error, width: 1.5),
     ),
-    labelStyle: const TextStyle(
+    labelStyle: TextStyle(
       fontFamily: 'OpenSans-Regular',
       fontSize: 14,
-      color: AppColors.textSecondary,
+      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
     ),
-    hintStyle: const TextStyle(
+    hintStyle: TextStyle(
       fontFamily: 'OpenSans-Regular',
       fontSize: 14,
-      color: AppColors.textTertiary,
+      color: isDark ? AppColors.darkTextTertiary : AppColors.textTertiary,
     ),
   );
 }

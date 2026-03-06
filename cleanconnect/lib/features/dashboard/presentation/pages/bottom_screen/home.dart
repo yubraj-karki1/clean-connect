@@ -77,7 +77,7 @@ class _HomeState extends ConsumerState<Home> {
             .toList();
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,7 +158,7 @@ class _HomeState extends ConsumerState<Home> {
                               )
                             : null,
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: Theme.of(context).colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -193,10 +193,13 @@ class _HomeState extends ConsumerState<Home> {
                   ? Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(32),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           "No services found",
-                          style: TextStyle(fontSize: 15, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
+                          ),
                         ),
                       ),
                     )
@@ -283,7 +286,7 @@ class _HomeState extends ConsumerState<Home> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [
             BoxShadow(
@@ -324,7 +327,7 @@ class _HomeState extends ConsumerState<Home> {
       width: 200,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
@@ -390,8 +393,8 @@ class _HomeState extends ConsumerState<Home> {
                   },
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -434,7 +437,7 @@ class _HomeState extends ConsumerState<Home> {
                       "($reviews)",
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
                   ],
@@ -447,7 +450,7 @@ class _HomeState extends ConsumerState<Home> {
                       "$yearsExp years exp.",
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                     ),
                     Text(
@@ -645,7 +648,7 @@ class _NotificationsPage extends ConsumerWidget {
     final notificationsAsync = ref.watch(notificationItemsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Header
@@ -695,7 +698,9 @@ class _NotificationsPage extends ConsumerWidget {
                   children: [
                     Text(
                       "Failed to load notifications",
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     TextButton(
@@ -723,7 +728,7 @@ class _NotificationsPage extends ConsumerWidget {
                               "No notifications yet",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).textTheme.bodyMedium?.color,
                               ),
                             ),
                           ),
@@ -758,7 +763,7 @@ class _NotificationsPage extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(14),
                         ),
                         elevation: 0,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -786,7 +791,7 @@ class _NotificationsPage extends ConsumerWidget {
                                 item.message,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey[600],
+                                  color: Theme.of(context).textTheme.bodyMedium?.color,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -794,7 +799,7 @@ class _NotificationsPage extends ConsumerWidget {
                                 "Date: ${_formatSchedule(context, item.createdAt)}",
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[500],
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -802,7 +807,7 @@ class _NotificationsPage extends ConsumerWidget {
                                 "Worker ID: $workerIdText",
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[500],
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -810,7 +815,7 @@ class _NotificationsPage extends ConsumerWidget {
                                 "Booking ID: $bookingIdText",
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[500],
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
                                 ),
                               ),
                             ],

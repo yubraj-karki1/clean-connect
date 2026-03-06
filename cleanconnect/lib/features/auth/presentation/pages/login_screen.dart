@@ -1,4 +1,5 @@
 import 'package:cleanconnect/app/routes/app_routes.dart';
+import 'package:cleanconnect/core/providers/biometric_provider.dart';
 import 'package:cleanconnect/core/utils/snackbar_utils.dart';
 import 'package:cleanconnect/features/auth/presentation/pages/signup_screen.dart';
 import 'package:cleanconnect/features/auth/presentation/state/auth_state.dart';
@@ -8,6 +9,7 @@ import 'package:cleanconnect/features/dashboard/presentation/pages/forgot_screen
 import 'package:cleanconnect/features/dashboard/presentation/pages/worker_dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -21,6 +23,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _biometricBusy = false;
 
   @override
   void dispose() {
@@ -37,6 +40,58 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
+    }
+  }
+
+  Future<void> _handleBiometricLogin() async {
+    if (_biometricBusy) return;
+
+    setState(() => _biometricBusy = true);
+
+    try {
+      final biometric = ref.read(biometricAuthProvider);
+      final canUseBiometric = await biometric.canUseBiometrics();
+
+      if (!canUseBiometric) {
+        if (!mounted) return;
+        SnackbarUtils.showError(
+          context,
+          'Biometric authentication is not available on this device.',
+        );
+        return;
+      }
+
+      final authenticated = await biometric.authenticate();
+      if (!authenticated) {
+        if (!mounted) return;
+        SnackbarUtils.showError(context, 'Biometric authentication failed.');
+        return;
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token') ?? '';
+      final role = (prefs.getString('user_role') ?? 'customer').toLowerCase();
+
+      if (token.isEmpty) {
+        if (!mounted) return;
+        SnackbarUtils.showError(
+          context,
+          'No saved session found. Please login once with email/password.',
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      SnackbarUtils.showSuccess(context, 'Biometric login successful.');
+      if (role == 'worker') {
+        AppRoutes.pushReplacement(context, const WorkerDashboardPage());
+      } else {
+        AppRoutes.pushReplacement(context, const CustomerDashboardPage());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _biometricBusy = false);
+      }
     }
   }
   @override
@@ -210,6 +265,38 @@ Widget build(BuildContext context) {
                 ),
               ),
               const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: 260,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: _biometricBusy ? null : _handleBiometricLogin,
+                    icon: _biometricBusy
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.fingerprint, color: Colors.teal),
+                    label: const Text(
+                      'Login with Fingerprint',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.teal,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.teal),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -8,9 +8,10 @@ class Favourite extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final favourites = ref.watch(favouritesProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // HEADER
@@ -79,7 +80,7 @@ class Favourite extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey[600],
+                            color: theme.textTheme.bodyMedium?.color,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -88,7 +89,7 @@ class Favourite extends ConsumerWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[500],
+                            color: theme.textTheme.bodyMedium?.color,
                           ),
                         ),
                       ],
@@ -114,7 +115,7 @@ class Favourite extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 0,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -167,7 +168,10 @@ class Favourite extends ConsumerWidget {
                       const SizedBox(width: 4),
                       Text(
                         "(${cleaner.reviews} reviews)",
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
                       ),
                     ],
                   ),
@@ -176,7 +180,10 @@ class Favourite extends ConsumerWidget {
                     children: [
                       Text(
                         "${cleaner.yearsExp} yrs exp.",
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
                       ),
                       const Spacer(),
                       Text(

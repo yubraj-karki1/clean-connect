@@ -399,6 +399,15 @@ final userRoleProvider = FutureProvider.autoDispose<String>((ref) async {
   return (prefs.getString('user_role') ?? 'customer').toLowerCase();
 });
 
+/// Total bookings count for the current user (customer/worker aware).
+final totalBookingsCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  final role = await ref.watch(userRoleProvider.future);
+  final bookings = await ref.watch(
+    (role == 'worker' ? myWorkerWorkProvider : myBookingsProvider).future,
+  );
+  return bookings.length;
+});
+
 /// Worker-only assigned work list.
 final myWorkerWorkProvider =
     FutureProvider.autoDispose<List<BookingItem>>((ref) async {

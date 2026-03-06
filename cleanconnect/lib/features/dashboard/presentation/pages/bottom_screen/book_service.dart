@@ -20,9 +20,9 @@ class _BookServiceState extends ConsumerState<BookService> {
     final roleAsync = ref.watch(userRoleProvider);
 
     return roleAsync.when(
-      loading: () => const Scaffold(
-        backgroundColor: Color(0xFFF7F7F7),
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF00C9A7))),
+      loading: () => Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator(color: Color(0xFF00C9A7))),
       ),
       error: (_, __) => _buildBookingsScaffold(context, ref, false),
       data: (role) => _buildBookingsScaffold(context, ref, role == 'worker'),
@@ -39,7 +39,7 @@ class _BookServiceState extends ConsumerState<BookService> {
     final pastEmpty = isWorker ? "No completed jobs yet" : "No past bookings";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(isWorker ? myWorkerWorkProvider : myBookingsProvider);
@@ -118,7 +118,9 @@ class _BookServiceState extends ConsumerState<BookService> {
                         Text(
                           error.toString().replaceFirst('Exception: ', ''),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.grey),
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         TextButton(
@@ -154,7 +156,7 @@ class _BookServiceState extends ConsumerState<BookService> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[900],
+                              color: Theme.of(context).textTheme.titleMedium?.color,
                             ),
                           ),
                         ),
@@ -166,13 +168,16 @@ class _BookServiceState extends ConsumerState<BookService> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
                               child: Text(
                                 upcomingEmpty,
-                                style: const TextStyle(fontSize: 15, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                                ),
                               ),
                             ),
                           ),
@@ -191,7 +196,7 @@ class _BookServiceState extends ConsumerState<BookService> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[900],
+                              color: Theme.of(context).textTheme.titleMedium?.color,
                             ),
                           ),
                         ),
@@ -203,13 +208,16 @@ class _BookServiceState extends ConsumerState<BookService> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
                               child: Text(
                                 pastEmpty,
-                                style: const TextStyle(fontSize: 15, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                                ),
                               ),
                             ),
                           ),
@@ -285,7 +293,7 @@ class _BookServiceState extends ConsumerState<BookService> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[900],
+                    color: Theme.of(context).textTheme.titleMedium?.color,
                   ),
                 ),
               ),
@@ -297,13 +305,13 @@ class _BookServiceState extends ConsumerState<BookService> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Center(
                     child: Text(
                       "No additional customer bookings",
-                      style: TextStyle(fontSize: 15, color: Colors.grey),
+                      style: const TextStyle(fontSize: 15),
                     ),
                   ),
                 ),
@@ -355,7 +363,7 @@ class _BookServiceState extends ConsumerState<BookService> {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 0,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -370,17 +378,17 @@ class _BookServiceState extends ConsumerState<BookService> {
                     children: [
                       Text(
                         booking.serviceTitle ?? 'Cleaning Service',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Theme.of(context).textTheme.titleMedium?.color,
                         ),
                       ),
                       Text(
                         "${booking.durationHours.toStringAsFixed(0)} hour(s)",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                         ),
                       ),
                     ],
@@ -452,37 +460,61 @@ class _BookServiceState extends ConsumerState<BookService> {
               const SizedBox(height: 4),
               Text(
                 "Customer: ${booking.customerName}",
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             ],
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                Icon(
+                  Icons.calendar_today,
+                  size: 18,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
                 const SizedBox(width: 6),
                 Text(dateStr,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    )),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.access_time, size: 18, color: Colors.grey),
+                Icon(
+                  Icons.access_time,
+                  size: 18,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
                 const SizedBox(width: 6),
                 Text(timeStr,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    )),
               ],
             ),
             if (location != null && location.isNotEmpty) ...[
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.location_on_outlined, size: 18, color: Colors.grey),
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 18,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       location,
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

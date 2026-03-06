@@ -1,5 +1,8 @@
 import 'dart:io';
 import 'package:cleanconnect/core/providers/profile_image_provider.dart';
+import 'package:cleanconnect/core/providers/theme_provider.dart';
+import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
+import 'package:cleanconnect/features/dashboard/presentation/providers/favourites_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/profile_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,20 +14,26 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final profileState = ref.watch(profileProvider);
+    final totalBookingsAsync = ref.watch(totalBookingsCountProvider);
+    final favouritesCount = ref.watch(favouritesProvider).length;
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: profileState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text("Error: ${err.toString()}")),
         data: (user) => SingleChildScrollView(
           child: Column(
             children: [
-              _buildHeader(),
+              _buildHeader(isDark),
               _buildProfileInfo(context, ref, user),
               const SizedBox(height: 40),
-              _buildCards(user),
+              _buildCards(context, user),
+              _buildSummaryCards(context, totalBookingsAsync, favouritesCount),
+              const SizedBox(height: 8),
+              _buildThemeModeTile(context, ref),
               const SizedBox(height: 30),
               _buildActions(context),
             ],
@@ -35,12 +44,12 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   // ================= HEADER =================
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(top: 60, bottom: 60, left: 20, right: 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFF00D2A1),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0E7E65) : const Color(0xFF00D2A1),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -163,9 +172,10 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 10),
           Text(
             user.fullName,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.titleLarge?.color,
             ),
           ),
         ],
@@ -174,20 +184,47 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   // ================= INFO CARDS =================
-  Widget _buildCards(user) {
+  Widget _buildCards(BuildContext context, user) {
+    final phoneText = _formatPhoneNumber(user.phone ?? '');
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          _buildInfoCard(Icons.email_outlined, "Email", user.email),
-          _buildInfoCard(Icons.phone_outlined, "Phone", user.phone),
-          _buildInfoCard(Icons.location_on_outlined, "Address", user.address),
+          _buildInfoCard(context, Icons.email_outlined, "Email", user.email),
+          _buildInfoCard(
+            context,
+            Icons.phone_outlined,
+            "Phone",
+            phoneText,
+            isPhone: true,
+          ),
+          _buildInfoCard(
+            context,
+            Icons.location_on_outlined,
+            "Address",
+            user.address,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard(IconData icon, String label, String value) {
+  Widget _buildInfoCard(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value, {
+    bool isPhone = false,
+  }) {
+    final valueStyle = isPhone
+        ? TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+            color: Colors.white,
+          )
+        : const TextStyle(fontSize: 16, fontWeight: FontWeight.w500);
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 15),
@@ -196,16 +233,231 @@ class ProfileScreen extends ConsumerWidget {
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFE0F7F3),
+            color: const Color(0xFF00D2A1).withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: const Color(0xFF00D2A1)),
         ),
-        title: Text(label,
-            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        title: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).textTheme.bodySmall?.color,
+          ),
+        ),
         subtitle: Text(
           value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          style: valueStyle,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCards(
+    BuildContext context,
+    AsyncValue<int> totalBookingsAsync,
+    int favouritesCount,
+  ) {
+    final bookingsText = totalBookingsAsync.when(
+      data: (value) => value.toString(),
+      loading: () => '...',
+      error: (_, __) => '0',
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSummaryCard(
+              context: context,
+              icon: Icons.calendar_month_outlined,
+              title: 'Total Bookings',
+              value: bookingsText,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildSummaryCard(
+              context: context,
+              icon: Icons.favorite_outline,
+              title: 'Favourites',
+              value: favouritesCount.toString(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00D2A1).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: const Color(0xFF00D2A1), size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatPhoneNumber(String rawPhone) {
+    if (rawPhone.trim().isEmpty) return 'Not provided';
+
+    final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+
+    // Nepal mobile format: +977 98X-XXXXXXX
+    if (digits.length == 13 && digits.startsWith('977')) {
+      final local = digits.substring(3);
+      if (local.length == 10) {
+        return '+977 ${local.substring(0, 3)}-${local.substring(3)}';
+      }
+    }
+
+    // Nepal local mobile format: 98X-XXXXXXX / 97X-XXXXXXX
+    if (digits.length == 10) {
+      if (digits.startsWith('98') || digits.startsWith('97')) {
+        return '${digits.substring(0, 3)}-${digits.substring(3)}';
+      }
+      return '${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}';
+    }
+
+    return rawPhone;
+  }
+
+  Widget _buildThemeModeTile(BuildContext context, WidgetRef ref) {
+    final selectedMode = ref.watch(themeModeProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _buildThemeChip(
+                    context: context,
+                    label: 'Light',
+                    icon: Icons.light_mode,
+                    selected: selectedMode == ThemeMode.light,
+                    onTap: () => ref
+                        .read(themeModeProvider.notifier)
+                        .setThemeMode(ThemeMode.light),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildThemeChip(
+                    context: context,
+                    label: 'Dark',
+                    icon: Icons.dark_mode,
+                    selected: selectedMode == ThemeMode.dark,
+                    onTap: () => ref
+                        .read(themeModeProvider.notifier)
+                        .setThemeMode(ThemeMode.dark),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildThemeChip(
+                    context: context,
+                    label: 'Auto',
+                    icon: Icons.brightness_auto,
+                    selected: selectedMode == ThemeMode.system,
+                    onTap: () => ref
+                        .read(themeModeProvider.notifier)
+                        .setThemeMode(ThemeMode.system),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeChip({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? const Color(0xFF00D2A1).withValues(alpha: 0.16)
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected
+                  ? const Color(0xFF00D2A1)
+                  : Theme.of(context).dividerColor,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: const Color(0xFF00D2A1)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
