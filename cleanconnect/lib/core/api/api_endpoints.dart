@@ -14,15 +14,11 @@ class ApiEndpoints {
 // ========================= Auth Endpoints =========================
   static const String login = "/auth/login";
   static const String signup = "/auth/register";
-   
   // ========================= PHOTO (IMAGE) ENDPOINTS =========================
-
   static const String uploadPhoto = "/media/photo/upload";
   static const String uploadPhotos = "/media/photos/upload";
   static const String getPhoto = "/media/photo";
-
   // ========================= BOOKING ENDPOINTS =========================
-
   static const String services = "/bookings/services";
   static const String createBooking = "/bookings";
   static const String allBookings = "/bookings";
@@ -43,9 +39,7 @@ class ApiEndpoints {
   static String completeBooking(String id) => "/bookings/$id/complete";
   static String markBookingComplete(String id) => "/bookings/$id/mark-complete";
   static String finishBooking(String id) => "/bookings/$id/finish";
-
   // ========================= PHOTO URL HELPER =========================
-
   static String photoUrl(String fileName) {
     return "$baseUrl$getPhoto/$fileName";
   }

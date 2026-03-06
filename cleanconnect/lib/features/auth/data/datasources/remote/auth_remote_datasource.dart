@@ -15,6 +15,16 @@ final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref) {
 });
 
 class AuthRemoteDatasource implements IAuthRemoteDataSource {
+
+// create a provider
+final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref){
+  return AuthRemoteDatasource(
+    apiClient : ref.read(apiClientProvider),
+    userSessionService : ref.read(userSessionServiceProvider),
+    
+  );
+});
+class AuthRemoteDatasource implements IAuthRemoteDataSource{
   final ApiClient _apiClient;
   final UserSessionService _userSessionService;
 
@@ -26,6 +36,12 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
 
   @override
   Future<AuthApiModel> getUserById(String user) {
+  }): _apiClient = apiClient,
+      _userSessionService = userSessionService;
+
+  @override
+  Future<AuthApiModel> getUserById(String user) {
+    // TODO: implement getUserById
     throw UnimplementedError();
   }
 
@@ -60,8 +76,16 @@ Future<AuthApiModel> login(String email, String password) async {
         fullName: user.fullName,
         role: user.role,
         address: user.address,
-      );
+      final data = response.data['data'] as Map<String, dynamic>;
+      
+      final user = AuthApiModel.fromJson(data);
 
+      await _userSessionService.saveUserSession(
+        userId: user.id ?? "", 
+        email: email,
+        fullName: user.fullName ?? "User",
+        address: user.address ?? "", 
+      );
       return user;
     } else {
       throw DioException(
@@ -74,16 +98,16 @@ Future<AuthApiModel> login(String email, String password) async {
     rethrow;
   }
 }
-
 // --- FIXED REGISTER METHOD ---
 @override
 Future<AuthApiModel> register(AuthApiModel user) async {
   try {
+  @override
+  Future<AuthApiModel> register(AuthApiModel user) async{
     final response = await _apiClient.post(
       ApiEndpoints.signup,
       data: user.toJson(),
     );
-
     if (response.data['success'] == true) {
       // ✅ FIXED: Check the 'data' field for the token here as well
       // if your signup logic also returns a token inside 'data'
@@ -106,4 +130,12 @@ Future<AuthApiModel> register(AuthApiModel user) async {
     rethrow;
   }
 }
+}
+    if(response.data['success'] == true){
+      final data = response.data['data'] as Map<String, dynamic>;
+      final registerUser = AuthApiModel.fromJson(data);
+      return registerUser;
+    }
+    return user;
+  }
 }

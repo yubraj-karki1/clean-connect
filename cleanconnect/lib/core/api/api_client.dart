@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 // Provider for ApiClient
 final apiClientProvider = Provider<ApiClient>((ref) {
@@ -105,7 +107,6 @@ class ApiClient {
       options: options,
     );
   }
-
   // PATCH request
   Future<Response> patch(
     String path, {
@@ -120,7 +121,6 @@ class ApiClient {
       options: options,
     );
   }
-
   // DELETE request
   Future<Response> delete(
     String path, {
@@ -154,6 +154,8 @@ class ApiClient {
 
 // Auth Interceptor to add JWT token to requests
 class _AuthInterceptor extends Interceptor {
+  final _storage = const FlutterSecureStorage();
+
   static const String _tokenKey = 'auth_token';
 
   @override
@@ -162,14 +164,26 @@ class _AuthInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     // Skip auth for public endpoints
+    final publicEndpoints = [
+      ApiEndpoints.login,
+      ApiEndpoints.signup
+    ];
+
+    final isPublicGet =
+        options.method == 'GET' &&
+        publicEndpoints.any((endpoint) => options.path.startsWith(endpoint));
+
     final isAuthEndpoint =
         options.path == ApiEndpoints.login ||
         options.path == ApiEndpoints.signup;
-
     if (!isAuthEndpoint) {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(_tokenKey);
       if (token != null && token.isNotEmpty) {
+
+    if (!isPublicGet && !isAuthEndpoint) {
+      final token = await _storage.read(key: _tokenKey);
+      if (token != null) {
         options.headers['Authorization'] = 'Bearer $token';
       }
     }
@@ -184,6 +198,11 @@ class _AuthInterceptor extends Interceptor {
       SharedPreferences.getInstance().then((prefs) {
         prefs.remove(_tokenKey);
       });
+    // Handle 401 Unauthorized - token expired
+    if (err.response?.statusCode == 401) {
+      // Clear token and redirect to login
+      _storage.delete(key: _tokenKey);
+      // You can add navigation logic here or use a callback
     }
     handler.next(err);
   }

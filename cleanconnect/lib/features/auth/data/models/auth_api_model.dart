@@ -46,6 +46,9 @@ class AuthApiModel {
     fullName: json['fullName'] as String? ?? '',
     email: json['email'] as String? ?? '',
     role: (json['role'] ?? json['userType'] ?? json['accountType']) as String?,
+    id: json['_id'] as String? ?? '', 
+    fullName: json['fullName'] as String? ?? '',
+    email: json['email'] as String? ?? '',
     address: json['address'] as String? ?? '', 
     phoneNumber: json['phoneNumber'] as String? ?? '',
     password: json['password'] as String? ?? '',
@@ -80,6 +83,6 @@ class AuthApiModel {
       confirmPassword: entity.confirmPassword
     );
   }
-
-
 }
+}
+
