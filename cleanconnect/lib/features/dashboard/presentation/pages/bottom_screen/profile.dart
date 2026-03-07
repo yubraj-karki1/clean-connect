@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:cleanconnect/core/api/api_endpoints.dart';
+import 'package:cleanconnect/core/providers/biometric_provider.dart';
 import 'package:cleanconnect/core/providers/profile_image_provider.dart';
 import 'package:cleanconnect/core/providers/theme_provider.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
@@ -9,11 +11,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _biometricEnabled = false;
+  bool _biometricToggleBusy = false;
+  bool _biometricLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricSetting();
+  }
+
+  Future<void> _loadBiometricSetting() async {
+    final biometric = ref.read(biometricAuthProvider);
+    final enabled = await biometric.isBiometricLoginEnabled();
+    if (!mounted) return;
+    setState(() {
+      _biometricEnabled = enabled;
+      _biometricLoaded = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final profileState = ref.watch(profileProvider);
     final totalBookingsAsync = ref.watch(totalBookingsCountProvider);
@@ -25,6 +52,10 @@ class ProfileScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text("Error: ${err.toString()}")),
         data: (user) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             children: [
               _buildHeader(isDark),
@@ -34,6 +65,8 @@ class ProfileScreen extends ConsumerWidget {
               _buildSummaryCards(context, totalBookingsAsync, favouritesCount),
               const SizedBox(height: 8),
               _buildThemeModeTile(context, ref),
+              const SizedBox(height: 8),
+              _buildBiometricTile(context),
               const SizedBox(height: 30),
               _buildActions(context),
             ],
@@ -84,7 +117,10 @@ class ProfileScreen extends ConsumerWidget {
 
   // ================= PROFILE IMAGE =================
   Widget _buildProfileInfo(BuildContext context, WidgetRef ref, user) {
-    debugPrint("profile pic: http://localhost:5000/${user.profileImage}");
+    final profileImageUrl = _buildProfileImageUrl(user.profileImage?.toString());
+    if (profileImageUrl != null) {
+      debugPrint("profile pic: $profileImageUrl");
+    }
     final ImagePicker picker = ImagePicker();
 
     // Watch the family provider for this user
@@ -144,7 +180,7 @@ class ProfileScreen extends ConsumerWidget {
                         user.profileImage.toString().isNotEmpty &&
                         user.profileImage.toString() != "null")
                     ? NetworkImage(
-                        "http://10.0.2.2:5000/${user.profileImage}?v=${DateTime.now().millisecondsSinceEpoch}")
+                        profileImageUrl!)
                     : const AssetImage("assets/images/default_profile.png")
                         as ImageProvider,
                 child: imageState.isLoading
@@ -181,6 +217,24 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String? _buildProfileImageUrl(String? rawPath) {
+    if (rawPath == null || rawPath.trim().isEmpty || rawPath == "null") {
+      return null;
+    }
+
+    final cacheBuster = DateTime.now().millisecondsSinceEpoch;
+    final trimmed = rawPath.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      final separator = trimmed.contains('?') ? '&' : '?';
+      return '$trimmed${separator}v=$cacheBuster';
+    }
+
+    final apiUri = Uri.parse(ApiEndpoints.baseUrl);
+    final origin = '${apiUri.scheme}://${apiUri.host}:${apiUri.port}';
+    final cleanPath = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+    return '$origin/$cleanPath?v=$cacheBuster';
   }
 
   // ================= INFO CARDS =================
@@ -417,6 +471,96 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _buildBiometricTile(BuildContext context) {
+    final subtitle = !_biometricLoaded
+        ? 'Checking availability...'
+        : _biometricEnabled
+            ? 'Fingerprint login is enabled'
+            : 'Enable fingerprint login for faster access';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: SwitchListTile(
+          value: _biometricEnabled,
+          onChanged: _biometricToggleBusy ? null : _onBiometricToggle,
+          title: const Text(
+            'Enable Fingerprint Login',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(subtitle),
+          secondary: _biometricToggleBusy
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.fingerprint, color: Color(0xFF00D2A1)),
+          activeColor: const Color(0xFF00D2A1),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onBiometricToggle(bool nextValue) async {
+    if (_biometricToggleBusy) return;
+    setState(() => _biometricToggleBusy = true);
+
+    final biometric = ref.read(biometricAuthProvider);
+
+    try {
+      if (!nextValue) {
+        await biometric.setBiometricLoginEnabled(false);
+        if (!mounted) return;
+        setState(() => _biometricEnabled = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fingerprint login disabled.')),
+        );
+        return;
+      }
+
+      final canUse = await biometric.canUseBiometrics();
+      if (!canUse) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Fingerprint is unavailable. Add fingerprint in device settings first.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      final verified = await biometric.authenticate(
+        biometricOnly: false,
+        reason: 'Verify your identity to enable fingerprint login',
+      );
+      if (!verified) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fingerprint verification failed.'),
+          ),
+        );
+        return;
+      }
+
+      await biometric.setBiometricLoginEnabled(true);
+      if (!mounted) return;
+      setState(() => _biometricEnabled = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fingerprint login enabled.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _biometricToggleBusy = false);
+      }
+    }
+  }
   Widget _buildThemeChip({
     required BuildContext context,
     required String label,
@@ -531,4 +675,5 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 }
+
 

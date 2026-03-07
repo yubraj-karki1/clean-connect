@@ -24,6 +24,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _biometricBusy = false;
+  bool _biometricEnabled = false;
+  String? _lastLoginEmail;
+  String? _lastLoginPassword;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricPreference();
+  }
+
+  Future<void> _loadBiometricPreference() async {
+    final biometric = ref.read(biometricAuthProvider);
+    final enabled = await biometric.isBiometricLoginEnabled();
+    if (!mounted) return;
+    setState(() => _biometricEnabled = enabled);
+  }
 
   @override
   void dispose() {
@@ -34,17 +50,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
+      _lastLoginEmail = _emailController.text.trim();
+      _lastLoginPassword = _passwordController.text.trim();
       await ref
           .read(authViewModelProvider.notifier)
           .login(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
+            email: _lastLoginEmail!,
+            password: _lastLoginPassword!,
           );
     }
   }
 
   Future<void> _handleBiometricLogin() async {
     if (_biometricBusy) return;
+    if (!_biometricEnabled) {
+      if (!mounted) return;
+      SnackbarUtils.showError(
+        context,
+        'Enable fingerprint login from Profile first.',
+      );
+      return;
+    }
 
     setState(() => _biometricBusy = true);
 
@@ -61,7 +87,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         return;
       }
 
-      final authenticated = await biometric.authenticate();
+      final authenticated = await biometric.authenticate(
+        biometricOnly: false,
+        reason: 'Verify your identity to login',
+      );
       if (!authenticated) {
         if (!mounted) return;
         SnackbarUtils.showError(context, 'Biometric authentication failed.');
@@ -70,17 +99,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token') ?? '';
-      final role = (prefs.getString('user_role') ?? 'customer').toLowerCase();
 
       if (token.isEmpty) {
-        if (!mounted) return;
-        SnackbarUtils.showError(
-          context,
-          'No saved session found. Please login once with email/password.',
-        );
+        final creds = await biometric.getBiometricCredentials();
+        if (creds == null) {
+          if (!mounted) return;
+          SnackbarUtils.showError(
+            context,
+            'No saved credentials found. Login once with email/password.',
+          );
+          return;
+        }
+
+        _lastLoginEmail = creds.email;
+        _lastLoginPassword = creds.password;
+        await ref.read(authViewModelProvider.notifier).login(
+              email: creds.email,
+              password: creds.password,
+            );
         return;
       }
 
+      final role = (prefs.getString('user_role') ?? 'customer').toLowerCase();
       if (!mounted) return;
       SnackbarUtils.showSuccess(context, 'Biometric login successful.');
       if (role == 'worker') {
@@ -99,6 +139,14 @@ Widget build(BuildContext context) {
   final authState = ref.watch(authViewModelProvider);
   ref.listen<AuthState>(authViewModelProvider, (previous, next) {
     if (next.status == AuthStatus.authenticated) {
+      final email = _lastLoginEmail;
+      final password = _lastLoginPassword;
+      if (email != null && password != null) {
+        ref.read(biometricAuthProvider).saveBiometricCredentials(
+              email: email,
+              password: password,
+            );
+      }
       SnackbarUtils.showSuccess(
         context, 
         'Login successful! Welcome back.',
@@ -265,38 +313,40 @@ Widget build(BuildContext context) {
                 ),
               ),
               const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  width: 260,
-                  height: 50,
-                  child: OutlinedButton.icon(
-                    onPressed: _biometricBusy ? null : _handleBiometricLogin,
-                    icon: _biometricBusy
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.fingerprint, color: Colors.teal),
-                    label: const Text(
-                      'Login with Fingerprint',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.teal,
+              if (_biometricEnabled) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: 260,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: _biometricBusy ? null : _handleBiometricLogin,
+                      icon: _biometricBusy
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.fingerprint, color: Colors.teal),
+                      label: const Text(
+                        'Login with Fingerprint',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.teal,
+                        ),
                       ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.teal),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.teal),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
+              ],
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -330,3 +380,4 @@ Widget build(BuildContext context) {
   
   }
 }
+

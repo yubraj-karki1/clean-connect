@@ -38,7 +38,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     });
   }
-
   final List<Widget> lstBottomScreen = [
     const Home(),
     const BookService(),

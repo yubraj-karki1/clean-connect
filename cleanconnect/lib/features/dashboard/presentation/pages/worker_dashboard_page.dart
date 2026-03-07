@@ -869,6 +869,7 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
+                    _customerDetailsFutures.clear();
                     ref.invalidate(workerCustomerBookingsProvider);
                     await ref.read(workerCustomerBookingsProvider.future);
                   },
@@ -1006,9 +1007,13 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
       if (bookingData != null) {
         final customerNode = bookingData['customer'] ??
             bookingData['customerId'] ??
+            bookingData['customerDetails'] ??
             bookingData['bookedBy'] ??
             bookingData['createdBy'] ??
-            bookingData['user'];
+            bookingData['requestedBy'] ??
+            bookingData['requester'] ??
+            bookingData['user'] ??
+            bookingData['userId'];
 
         if (customerNode is Map<String, dynamic>) {
           customerId = customerNode['_id']?.toString() ??
@@ -1071,23 +1076,28 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
         final userData = _extractMap(response.data);
         if (userData == null) continue;
 
+        final customerMap = _extractCustomerMap(userData) ?? userData;
         current = current.merge(
           name: _pickFirst([
-            userData['fullName'],
-            userData['name'],
-            userData['username'],
+            customerMap['fullName'],
+            customerMap['name'],
+            customerMap['username'],
+            userData['customerName'],
           ]),
           email: _pickFirst([
-            userData['email'],
-            userData['mail'],
+            customerMap['email'],
+            customerMap['mail'],
+            userData['customerEmail'],
           ]),
           phone: _pickFirst([
-            userData['phoneNumber'],
-            userData['phone'],
-            userData['mobile'],
-            userData['contactNumber'],
+            customerMap['phoneNumber'],
+            customerMap['phone'],
+            customerMap['mobile'],
+            customerMap['contactNumber'],
+            userData['customerPhone'],
           ]),
-          address: _extractAddressFromMap(userData),
+          address:
+              _extractAddressFromMap(customerMap) ?? _extractAddressFromMap(userData),
         );
 
         if (current.hasAny) {
@@ -1103,6 +1113,25 @@ class _WorkerDashboardPageState extends ConsumerState<WorkerDashboardPage> {
     if (raw is Map<String, dynamic>) {
       final nested = raw['data'] ?? raw['user'] ?? raw['booking'] ?? raw;
       if (nested is Map<String, dynamic>) return nested;
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _extractCustomerMap(Map<String, dynamic> source) {
+    final candidates = <dynamic>[
+      source['customer'],
+      source['user'],
+      source['customerId'],
+      source['bookedBy'],
+      source['createdBy'],
+      source['requestedBy'],
+      source['requester'],
+      source['profile'],
+      source['details'],
+    ];
+
+    for (final node in candidates) {
+      if (node is Map<String, dynamic>) return node;
     }
     return null;
   }

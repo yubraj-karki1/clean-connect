@@ -1,5 +1,6 @@
 import 'package:cleanconnect/app/app.dart';
 import 'package:cleanconnect/core/services/hive/hive_service.dart';
+import 'package:cleanconnect/core/api/api_endpoints.dart';
 import 'package:cleanconnect/core/services/storage/user_session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,8 @@ void main() async {
 
   await HiveService().init();
   final sharedPrefs = await SharedPreferences.getInstance();
+  await ApiEndpoints.init();
+  debugPrint('API Base URL: ${ApiEndpoints.baseUrl}');
 
   runApp(
     ProviderScope(
@@ -20,3 +23,4 @@ void main() async {
     ),
   );
 }
+

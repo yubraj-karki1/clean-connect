@@ -207,7 +207,7 @@ class _HomeState extends ConsumerState<Home> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 3,
-                      childAspectRatio: 0.85,
+                      childAspectRatio: 0.78,
                       crossAxisSpacing: 15,
                       mainAxisSpacing: 15,
                       children: filteredServices
@@ -297,14 +297,20 @@ class _HomeState extends ConsumerState<Home> {
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(img, height: 45),
+            Image.asset(img, height: 44, fit: BoxFit.contain),
             const SizedBox(height: 8),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.1,
+              ),
             ),
           ],
         ),
@@ -513,6 +519,9 @@ class _NotificationItem {
   final String id;
   final String title;
   final String message;
+  final String? workerName;
+  final String? workerEmail;
+  final String? workerPhone;
   final String? workerId;
   final String? bookingId;
   final DateTime createdAt;
@@ -522,6 +531,9 @@ class _NotificationItem {
     required this.title,
     required this.message,
     required this.createdAt,
+    this.workerName,
+    this.workerEmail,
+    this.workerPhone,
     this.workerId,
     this.bookingId,
   });
@@ -530,6 +542,160 @@ class _NotificationItem {
 final notificationItemsProvider =
     FutureProvider.autoDispose<List<_NotificationItem>>((ref) async {
   final apiClient = ref.read(apiClientProvider);
+  final workerDetailsCache = <String, Future<Map<String, String?>>>{};
+
+  String? pickFirst(List<dynamic> values) {
+    for (final value in values) {
+      if (value is Map || value is List) continue;
+      final text = value?.toString().trim();
+      if (text != null && text.isNotEmpty && text.toLowerCase() != 'null') {
+        return text;
+      }
+    }
+    return null;
+  }
+
+  String? pickNonEmpty(String? primary, String? fallback) {
+    final p = primary?.trim();
+    if (p != null && p.isNotEmpty && p.toLowerCase() != 'null') return p;
+    final f = fallback?.trim();
+    if (f != null && f.isNotEmpty && f.toLowerCase() != 'null') return f;
+    return null;
+  }
+
+  Map<String, dynamic>? extractMap(dynamic raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    final nested = raw['data'] ??
+        raw['booking'] ??
+        raw['user'] ??
+        raw['worker'] ??
+        raw['result'] ??
+        raw['item'] ??
+        raw;
+    return nested is Map<String, dynamic> ? nested : null;
+  }
+
+  Map<String, String?> parseWorker(dynamic workerNode) {
+    if (workerNode is! Map<String, dynamic>) {
+      return {
+        'id': pickFirst([workerNode]),
+        'name': null,
+        'email': null,
+        'phone': null,
+      };
+    }
+    return {
+      'id': pickFirst([workerNode['_id'], workerNode['id']]),
+      'name': pickFirst([
+        workerNode['fullName'],
+        workerNode['name'],
+        workerNode['username'],
+      ]),
+      'email': pickFirst([
+        workerNode['email'],
+        workerNode['mail'],
+      ]),
+      'phone': pickFirst([
+        workerNode['phoneNumber'],
+        workerNode['phone'],
+        workerNode['mobile'],
+        workerNode['contactNumber'],
+      ]),
+    };
+  }
+
+  Future<Map<String, String?>> fetchWorkerDetails({
+    String? workerId,
+    String? bookingId,
+  }) async {
+    final normalizedWorkerId = workerId?.trim() ?? '';
+    final normalizedBookingId = bookingId?.trim() ?? '';
+    if (normalizedWorkerId.isEmpty && normalizedBookingId.isEmpty) {
+      return const {'name': null, 'email': null, 'phone': null};
+    }
+
+    final cacheKey = '$normalizedWorkerId|$normalizedBookingId';
+    final cached = workerDetailsCache[cacheKey];
+    if (cached != null) return cached;
+
+    final future = () async {
+      var resolvedWorkerId = normalizedWorkerId;
+
+      if (normalizedBookingId.isNotEmpty) {
+        try {
+          final bookingResponse = await apiClient.get('/bookings/$normalizedBookingId');
+          final bookingData = extractMap(bookingResponse.data);
+          if (bookingData != null) {
+            final assignment = bookingData['assignment'];
+            final workerNode = bookingData['worker'] ??
+                bookingData['workerId'] ??
+                bookingData['assignedWorker'] ??
+                bookingData['assignedWorkerDetails'] ??
+                bookingData['workerDetails'] ??
+                bookingData['acceptedBy'] ??
+                bookingData['assignedTo'] ??
+                bookingData['provider'] ??
+                bookingData['providerId'] ??
+                (assignment is Map<String, dynamic>
+                    ? assignment['worker'] ??
+                        assignment['workerId'] ??
+                        assignment['assignedWorker'] ??
+                        assignment['acceptedBy'] ??
+                        assignment['provider']
+                    : null);
+            final bookingWorker = parseWorker(workerNode);
+            resolvedWorkerId = bookingWorker['id'] ?? resolvedWorkerId;
+            if ((bookingWorker['name'] ?? '').isNotEmpty ||
+                (bookingWorker['email'] ?? '').isNotEmpty ||
+                (bookingWorker['phone'] ?? '').isNotEmpty) {
+              return {
+                'name': bookingWorker['name'],
+                'email': bookingWorker['email'],
+                'phone': bookingWorker['phone'],
+              };
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (resolvedWorkerId.isEmpty) {
+        return const {'name': null, 'email': null, 'phone': null};
+      }
+
+      final attempts = <String>[
+        '/users/$resolvedWorkerId',
+        '/users/profile/$resolvedWorkerId',
+        '/workers/$resolvedWorkerId',
+        '/workers/profile/$resolvedWorkerId',
+      ];
+
+      for (final path in attempts) {
+        try {
+          final response = await apiClient.get(path);
+          final data = extractMap(response.data);
+          if (data == null) continue;
+          final workerMap = extractMap(data['worker']) ??
+              extractMap(data['user']) ??
+              extractMap(data['profile']) ??
+              data;
+          final parsed = parseWorker(workerMap);
+          if ((parsed['name'] ?? '').isNotEmpty ||
+              (parsed['email'] ?? '').isNotEmpty ||
+              (parsed['phone'] ?? '').isNotEmpty) {
+            return {
+              'name': parsed['name'],
+              'email': parsed['email'],
+              'phone': parsed['phone'],
+            };
+          }
+        } catch (_) {}
+      }
+      return const {'name': null, 'email': null, 'phone': null};
+    }();
+
+    workerDetailsCache[cacheKey] = future;
+    return future;
+  }
 
   List<_NotificationItem> parseItems(dynamic responseData) {
     List<dynamic>? asList;
@@ -560,9 +726,28 @@ final notificationItemsProvider =
           item['date']?.toString();
       final createdAt =
           DateTime.tryParse(createdAtText ?? '') ?? DateTime.now();
-      final workerId = item['workerId']?.toString() ??
-          nestedData['workerId']?.toString() ??
-          nestedData['acceptedBy']?.toString();
+      final workerNode = item['worker'] ??
+          item['acceptedBy'] ??
+          item['assignedWorker'] ??
+          item['assignedWorkerDetails'] ??
+          item['workerDetails'] ??
+          nestedData['worker'] ??
+          nestedData['acceptedBy'] ??
+          nestedData['assignedWorker'] ??
+          nestedData['assignedWorkerDetails'] ??
+          nestedData['workerDetails'];
+      final parsedWorker = parseWorker(workerNode);
+      final workerId = pickFirst([
+        parsedWorker['id'],
+        item['workerId'],
+        item['acceptedBy'],
+        item['assignedTo'],
+        item['providerId'],
+        nestedData['workerId'],
+        nestedData['acceptedBy'],
+        nestedData['assignedTo'],
+        nestedData['providerId'],
+      ]);
       final bookingId =
           item['bookingId']?.toString() ?? nestedData['bookingId']?.toString();
 
@@ -579,6 +764,9 @@ final notificationItemsProvider =
               ? item['message'].toString().trim()
               : 'A worker accepted your booking.',
           createdAt: createdAt,
+          workerName: parsedWorker['name'],
+          workerEmail: parsedWorker['email'],
+          workerPhone: parsedWorker['phone'],
           workerId: workerId,
           bookingId: bookingId,
         ),
@@ -599,7 +787,38 @@ final notificationItemsProvider =
     try {
       final response = await apiClient.get(endpoint);
       final items = parseItems(response.data);
-      if (items.isNotEmpty) return items;
+      if (items.isNotEmpty) {
+        final enriched = <_NotificationItem>[];
+        for (final item in items) {
+          final needsLookup =
+              (item.workerName?.trim().isNotEmpty != true ||
+                  item.workerEmail?.trim().isNotEmpty != true ||
+                  item.workerPhone?.trim().isNotEmpty != true) &&
+              (item.workerId?.trim().isNotEmpty == true);
+          if (!needsLookup) {
+            enriched.add(item);
+            continue;
+          }
+          final details = await fetchWorkerDetails(
+            workerId: item.workerId,
+            bookingId: item.bookingId,
+          );
+          enriched.add(
+            _NotificationItem(
+              id: item.id,
+              title: item.title,
+              message: item.message,
+              createdAt: item.createdAt,
+              workerId: item.workerId,
+              bookingId: item.bookingId,
+              workerName: pickNonEmpty(item.workerName, details['name']),
+              workerEmail: pickNonEmpty(item.workerEmail, details['email']),
+              workerPhone: pickNonEmpty(item.workerPhone, details['phone']),
+            ),
+          );
+        }
+        return enriched;
+      }
     } catch (_) {}
   }
 
@@ -633,6 +852,7 @@ final notificationItemsProvider =
           message:
               '${booking.workerName?.trim().isNotEmpty == true ? booking.workerName!.trim() : 'A worker'} accepted your ${booking.serviceTitle ?? 'cleaning service'} booking.',
           createdAt: booking.startAt,
+          workerName: booking.workerName,
           workerId: booking.workerId,
           bookingId: booking.id,
         ),
@@ -748,6 +968,18 @@ class _NotificationsPage extends ConsumerWidget {
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items[index];
+                      final workerNameText =
+                          item.workerName?.trim().isNotEmpty == true
+                              ? item.workerName!.trim()
+                              : 'Not available';
+                      final workerPhoneText =
+                          item.workerPhone?.trim().isNotEmpty == true
+                              ? item.workerPhone!.trim()
+                              : 'Not available';
+                      final workerEmailText =
+                          item.workerEmail?.trim().isNotEmpty == true
+                              ? item.workerEmail!.trim()
+                              : 'Not available';
                       final workerIdText =
                           item.workerId?.trim().isNotEmpty == true
                               ? item.workerId!.trim()
@@ -797,6 +1029,30 @@ class _NotificationsPage extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Text(
                                 "Date: ${_formatSchedule(context, item.createdAt)}",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Worker Name: $workerNameText",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Worker Phone: $workerPhoneText",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Worker Email: $workerEmailText",
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Theme.of(context).textTheme.bodySmall?.color,

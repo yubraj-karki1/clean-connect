@@ -1,5 +1,4 @@
 import 'package:cleanconnect/core/error/failure.dart';
-import 'package:cleanconnect/core/services/connectivity/netWork_info.dart';
 import 'package:cleanconnect/features/auth/data/datasources/auth_datasouce.dart';
 import 'package:cleanconnect/features/auth/data/datasources/local/auth_local_datasource.dart';
 import 'package:cleanconnect/features/auth/data/datasources/remote/auth_remote_datasource.dart';
@@ -16,74 +15,63 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
   final authDatasource = ref.read(authLocalDatasourceProvider);
   final AuthRemoteDatasource = ref.read(authRemoteDatasourceProvider);
-  final NetworkInfo = ref.read(networkInfoProvider);
   return AuthRepository(
    authDatasource: authDatasource, 
-    authRemoteDataSource: AuthRemoteDatasource, 
-    networkInfo: NetworkInfo
+    authRemoteDataSource: AuthRemoteDatasource
     );
 });
 
 class AuthRepository implements IAuthRepository {
   final IAuthLocalDataSource _authDataSource;
   final IAuthRemoteDataSource _authRemoteDataSource;
-  final NetworkInfo _networkInfo;
 
   AuthRepository({ 
     required IAuthLocalDataSource authDatasource,
     required IAuthRemoteDataSource authRemoteDataSource,
-    required NetworkInfo networkInfo,
     })
     : _authDataSource = authDatasource,
-      _authRemoteDataSource = authRemoteDataSource,
-      _networkInfo = networkInfo;
+      _authRemoteDataSource = authRemoteDataSource;
 
   @override
   Future<Either<Failure, bool>> register(AuthEntity user) async {
-    if (await _networkInfo.isConnected){
-      try{
-        // remote ma jaa
-        final apiModel = AuthApiModel.fromEntity(user);
-        await _authRemoteDataSource.register(apiModel);
-        return const Right(true);
-      } on DioException catch (e) {
-  // 1. Safely extract the message from the response body
-  // 2. We check if data is a Map before accessing ["message"]
-  String errorMessage = "Failed to Signup"; 
-  if (e.response?.data != null && e.response?.data is Map) {
-    errorMessage = e.response?.data["message"]?.toString() ?? "Failed to Signup";
-  }
-  return Left(
-    ApiFailure(
-      message: errorMessage,
-      statusCode: e.response?.statusCode,
-    ),
-  );
-}
-    }else{
-      try{
-        // check is email already exists
-        final existingUser = await  _authDataSource.getUserByEmail(user.email);
-        if (existingUser != null){
+    try {
+      final apiModel = AuthApiModel.fromEntity(user);
+      await _authRemoteDataSource.register(apiModel);
+      return const Right(true);
+    } on DioException catch (e) {
+      if (!_isNetworkError(e)) {
+        return Left(
+          ApiFailure(
+            message: _extractDioMessage(e, fallback: "Failed to Signup"),
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      }
+
+      // Network/server unreachable: fallback to local registration.
+      try {
+        final existingUser = await _authDataSource.getUserByEmail(user.email);
+        if (existingUser != null) {
           return const Left(
             LocalDataBaseFailure(message: "Email is already registered"),
           );
         }
         final authModel = AuthHiveModel(
           fullName: user.fullName,
-          email: user.email, 
+          email: user.email,
           phoneNumber: user.phoneNumber,
           address: user.address,
           password: user.password,
-          profilePicture: user.profilePicture, 
+          profilePicture: user.profilePicture,
           username: '',
-          
         );
         await _authDataSource.register(authModel);
         return const Right(true);
-      }catch(e){
+      } catch (e) {
         return Left(LocalDataBaseFailure(message: e.toString()));
       }
+    } catch (e) {
+      return Left(LocalDataBaseFailure(message: e.toString()));
     }
   }
 
@@ -92,40 +80,54 @@ class AuthRepository implements IAuthRepository {
     String email,
     String password,
   ) async  {
-    // ONLINE
-    if (await _networkInfo.isConnected) {
-      try {
-        final apiModel = await _authRemoteDataSource.login(email, password);
-
-        if (apiModel == null) {
-          return const Left(ApiFailure(message: "Invalid email or password"));
-        }
-
-        return Right(apiModel.toEntity());
-      } on DioException catch (e) {
+    try {
+      final apiModel = await _authRemoteDataSource.login(email, password);
+      return Right(apiModel.toEntity());
+    } on DioException catch (e) {
+      if (!_isNetworkError(e)) {
         return Left(
           ApiFailure(
-            message: e.response?.data['message'] ?? 'Login failed',
+            message: _extractDioMessage(e, fallback: 'Login failed'),
             statusCode: e.response?.statusCode,
           ),
         );
-      } catch (e) {
-        return Left(LocalDataBaseFailure(message: e.toString()));
-      }
-    }
-
-    // OFFLINE
-    try {
-      final hiveModel = await _authDataSource.getUserByEmail(email);
-
-      if (hiveModel != null && hiveModel.password == password) {
-        return Right(hiveModel.toEntity());
       }
 
-      return const Left(LocalDataBaseFailure(message: "Invalid credentials"));
+      // Server unreachable: fallback to offline local login.
+      try {
+        final hiveModel = await _authDataSource.getUserByEmail(email);
+        if (hiveModel != null && hiveModel.password == password) {
+          return Right(hiveModel.toEntity());
+        }
+        return const Left(
+          LocalDataBaseFailure(
+            message: "Server unreachable and no matching offline account found",
+          ),
+        );
+      } catch (inner) {
+        return Left(LocalDataBaseFailure(message: inner.toString()));
+      }
     } catch (e) {
       return Left(LocalDataBaseFailure(message: e.toString()));
     }
+  }
+
+  bool _isNetworkError(DioException e) {
+    return e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.connectionError;
+  }
+
+  String _extractDioMessage(DioException e, {required String fallback}) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      return data['message']?.toString() ?? fallback;
+    }
+    if (data is String && data.trim().isNotEmpty) {
+      return data.trim();
+    }
+    return fallback;
   }
 
   @override

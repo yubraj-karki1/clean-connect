@@ -99,7 +99,15 @@ class BookingItem {
                 assignmentJson['assignedWorker'] ??
                 assignmentJson['acceptedBy']
             : null);
-    final customerJson = json['customerId'] ?? json['customer'];
+    final customerJson = json['customer'] ??
+        json['customerId'] ??
+        json['customerDetails'] ??
+        json['bookedBy'] ??
+        json['createdBy'] ??
+        json['requestedBy'] ??
+        json['requester'] ??
+        json['user'] ??
+        json['userId'];
     final addressJson = json['address'];
     final locationJson = json['location'];
 
@@ -266,18 +274,38 @@ class BookingItem {
       status: (json['status'] ?? json['bookingStatus'] ?? '').toString(),
       workerId: extractId(workerJson),
       workerName: extractName(workerJson),
-      customerId: extractId(customerJson),
-      customerName: extractName(customerJson),
+      customerId: extractId(customerJson) ??
+          _pickNonEmpty([
+            json['customerId'],
+            json['customer_id'],
+            json['userId'],
+            json['bookedBy'],
+            json['createdBy'],
+          ]),
+      customerName: extractName(customerJson) ??
+          _pickNonEmpty([
+            json['customerName'],
+            json['customerFullName'],
+            json['fullName'],
+            json['name'],
+            json['username'],
+          ]),
       customerEmail: extractEmail(customerJson) ??
           _pickNonEmpty([
             json['customerEmail'],
+            json['customer_mail'],
+            json['userEmail'],
             json['email'],
           ]),
       customerPhone: extractPhone(customerJson) ??
           _pickNonEmpty([
             json['customerPhone'],
+            json['customer_phone'],
+            json['userPhone'],
             json['phone'],
             json['phoneNumber'],
+            json['mobile'],
+            json['contactNumber'],
           ]),
       addressLine1: extractLocation(),
       startAt: (DateTime.tryParse(json['startAt'] ?? '') ?? DateTime.now())
@@ -1258,3 +1286,4 @@ bool _isUnavailableEndpointMessage(String? message) {
   if (message == null) return false;
   return message.toLowerCase().contains('endpoint is unavailable on server');
 }
+

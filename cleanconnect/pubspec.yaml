@@ -27,6 +27,7 @@ dependencies:
   dio: ^5.4.1
   dio_smart_retry: ^7.0.1
   connectivity_plus: ^7.0.0
+  device_info_plus: ^11.5.0
   pretty_dio_logger: ^1.4.0   # ✅ USE THIS ONLY
 
   # Authentication
@@ -117,3 +118,4 @@ flutter_launcher_icons:
   ios: true
   image_path: assets/icons/clean_connet.ico
   remove_alpha_ios: true
+

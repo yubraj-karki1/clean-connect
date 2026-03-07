@@ -41,15 +41,37 @@ class AuthApiModel {
 
   //from JSON 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
+  String? asText(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString().trim();
+    if (text.isEmpty || text.toLowerCase() == 'null') return null;
+    return text;
+  }
+
   return AuthApiModel(
-    id: (json['_id'] ?? json['id']) as String? ?? '', 
-    fullName: json['fullName'] as String? ?? '',
-    email: json['email'] as String? ?? '',
-    role: (json['role'] ?? json['userType'] ?? json['accountType']) as String?,
-    address: json['address'] as String? ?? '', 
-    phoneNumber: json['phoneNumber'] as String? ?? '',
-    password: json['password'] as String? ?? '',
-    profilePicture: json['profilePicture'] as String? ?? '',
+    id: asText(json['_id']) ?? asText(json['id']) ?? '',
+    fullName: asText(json['fullName']) ??
+        asText(json['name']) ??
+        asText(json['username']) ??
+        '',
+    email: asText(json['email']) ?? '',
+    role: asText(json['role']) ??
+        asText(json['userType']) ??
+        asText(json['accountType']),
+    address: asText(json['address']) ??
+        asText(json['addressLine1']) ??
+        asText(json['location']) ??
+        '',
+    phoneNumber: asText(json['phoneNumber']) ??
+        asText(json['phone']) ??
+        asText(json['mobile']) ??
+        asText(json['contactNumber']) ??
+        '',
+    password: asText(json['password']) ?? '',
+    profilePicture: asText(json['profilePicture']) ??
+        asText(json['profileImage']) ??
+        asText(json['avatar']) ??
+        '',
   );
 }
 

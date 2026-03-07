@@ -53,5 +53,10 @@
 		<string>We need access to the photo library to select photos.</string>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Use Face ID to quickly and securely log in.</string>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+		</dict>
 	</dict>
 </plist>

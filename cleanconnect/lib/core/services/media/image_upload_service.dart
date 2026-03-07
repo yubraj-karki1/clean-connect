@@ -1,6 +1,8 @@
 
+import 'package:cleanconnect/core/api/api_endpoints.dart';
+
 class ImageUploadService {
-  static String uploadImageEndpoint()  {
-    return "http://10.0.2.2:5000/api/users/profile/image";
+  static String uploadImageEndpoint() {
+    return '${ApiEndpoints.baseUrl}/users/profile/image';
   }
 }
