@@ -24,17 +24,25 @@ class AuthApiModel {
   });
 
   Map<String, dynamic> toJson() {
+    final normalizedRole = _normalizeRole(role);
     return {
       'fullName': fullName,
       'email': email,
-      'role': role,
-      'userType': role,
+      'role': normalizedRole,
+      'userType': normalizedRole,
       'phoneNumber': phoneNumber,
       'address': address,
       'password': password,
       'profilePicture': profilePicture,
       'confirmPassword': confirmPassword,
     };
+  }
+
+  String? _normalizeRole(String? rawRole) {
+    final value = rawRole?.trim().toLowerCase();
+    if (value == null || value.isEmpty) return value;
+    if (value == 'customer') return 'user';
+    return value;
   }
 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {

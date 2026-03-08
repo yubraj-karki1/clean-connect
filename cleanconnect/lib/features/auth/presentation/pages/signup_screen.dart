@@ -18,7 +18,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _selectedRole = 'customer';
+  String _selectedRole = 'user';
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -212,7 +212,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                   items: const [
                     DropdownMenuItem(
-                      value: 'customer',
+                      value: 'user',
                       child: Text('Customer'),
                     ),
                     DropdownMenuItem(

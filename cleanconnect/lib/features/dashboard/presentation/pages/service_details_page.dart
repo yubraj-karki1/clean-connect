@@ -27,6 +27,50 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
   ServiceItem? _matchedService;
   double _hourlyRate = 35; // fallback default
 
+  String _normalizeTitle(String input) {
+    return input
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  ServiceItem? _findBestServiceMatch(List<ServiceItem> services, String requestedTitle) {
+    if (services.isEmpty) return null;
+
+    final requested = _normalizeTitle(requestedTitle);
+
+    for (final service in services) {
+      if (_normalizeTitle(service.title) == requested) {
+        return service;
+      }
+    }
+
+    for (final service in services) {
+      final candidate = _normalizeTitle(service.title);
+      if (candidate.contains(requested) || requested.contains(candidate)) {
+        return service;
+      }
+    }
+
+    final requestedTokens = requested.split(' ').where((e) => e.isNotEmpty).toSet();
+    ServiceItem? best;
+    var bestScore = 0;
+    for (final service in services) {
+      final candidateTokens = _normalizeTitle(service.title)
+          .split(' ')
+          .where((e) => e.isNotEmpty)
+          .toSet();
+      final overlap = requestedTokens.intersection(candidateTokens).length;
+      if (overlap > bestScore) {
+        bestScore = overlap;
+        best = service;
+      }
+    }
+
+    return bestScore > 0 ? best : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Load services from backend to find the matching service
@@ -34,17 +78,15 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
 
     // Try to match the service title to get real hourlyRate and serviceId
     servicesAsync.whenData((services) {
-      final match = services.where(
-        (s) => s.title.toLowerCase() == widget.serviceTitle.toLowerCase(),
-      );
-      if (match.isNotEmpty && _matchedService == null) {
+      final match = _findBestServiceMatch(services, widget.serviceTitle);
+      if (match != null &&
+          (_matchedService == null || _matchedService!.id != match.id)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              _matchedService = match.first;
-              _hourlyRate = match.first.hourlyRate;
-            });
-          }
+          if (!mounted) return;
+          setState(() {
+            _matchedService = match;
+            _hourlyRate = match.hourlyRate;
+          });
         });
       }
     });
@@ -379,9 +421,21 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
       return;
     }
 
-    if (_matchedService == null) {
-      _showError("Service not found. Please try again.");
-      return;
+    var selectedService = _matchedService;
+    if (selectedService == null) {
+      try {
+        final services = await ref.read(servicesProvider.future);
+        final fallback = _findBestServiceMatch(services, widget.serviceTitle);
+        if (fallback != null && mounted) {
+          setState(() {
+            _matchedService = fallback;
+            _hourlyRate = fallback.hourlyRate;
+          });
+          selectedService = fallback;
+        }
+      } catch (_) {
+        // Booking can still proceed with local fallback.
+      }
     }
 
     final shouldBook = await showDialog<bool>(
@@ -423,10 +477,12 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
       final apiClient = ref.read(apiClientProvider);
       await createBooking(
         apiClient: apiClient,
-        serviceId: _matchedService!.id,
+        serviceId: selectedService?.id,
+        serviceTitle: selectedService?.title ?? widget.serviceTitle,
         startAt: startAt,
         durationHours: _getDurationHours().toDouble(),
         addressLine1: addressController.text.trim(),
+        hourlyRate: _hourlyRate,
       );
 
       if (!mounted) return;

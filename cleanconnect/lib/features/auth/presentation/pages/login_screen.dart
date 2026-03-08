@@ -120,7 +120,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         return;
       }
 
-      final role = (prefs.getString('user_role') ?? 'customer').toLowerCase();
+      final role = (prefs.getString('user_role') ?? 'user').toLowerCase();
       if (!mounted) return;
       SnackbarUtils.showSuccess(context, 'Biometric login successful.');
       if (role == 'worker') {
@@ -151,13 +151,13 @@ Widget build(BuildContext context) {
         context, 
         'Login successful! Welcome back.',
       );
-      final role = (next.user?.role ?? 'customer').toLowerCase();
+      final role = (next.user?.role ?? 'user').toLowerCase();
       if (role == 'worker') {
         AppRoutes.pushReplacement(context, const WorkerDashboardPage());
       } else {
         AppRoutes.pushReplacement(context, const CustomerDashboardPage());
       }
-      AppRoutes.pushReplacement(context, const DashboardScreen());
+      // AppRoutes.pushReplacement(context, const DashboardScreen());
     } 
       else if (next.status == AuthStatus.error && next.errorMessage != null) {
       SnackbarUtils.showError(

@@ -5,7 +5,6 @@ import 'package:cleanconnect/core/services/storage/storage_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 /// Family provider: one provider instance per userId
 final profileImageProvider = StateNotifierProvider.family<ProfileImageNotifier,

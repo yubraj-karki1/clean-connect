@@ -21,7 +21,6 @@ void main() async {
         sharedPreferencesProvider.overrideWithValue(sharedPrefs),
       ],
       child: const App(), 
-      child: const App(), // ✅ use App, not MyApp
 
     ),
   );

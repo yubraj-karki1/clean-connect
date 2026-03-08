@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cleanconnect/core/api/api_client.dart';
 import 'package:cleanconnect/core/api/api_endpoints.dart';
 import 'package:dio/dio.dart';
@@ -20,13 +22,153 @@ class ServiceItem {
   });
 
   factory ServiceItem.fromJson(Map<String, dynamic> json) {
+    String readText(List<String> keys) {
+      for (final key in keys) {
+        final value = json[key];
+        final text = value?.toString().trim();
+        if (text != null && text.isNotEmpty && text.toLowerCase() != 'null') {
+          return text;
+        }
+      }
+      return '';
+    }
+
+    double readDouble(List<String> keys, {double fallback = 0}) {
+      for (final key in keys) {
+        final value = json[key];
+        if (value is num) return value.toDouble();
+        final parsed = double.tryParse(value?.toString() ?? '');
+        if (parsed != null) return parsed;
+      }
+      return fallback;
+    }
+
     return ServiceItem(
-      id: json['_id'] ?? '',
-      title: json['title'] ?? '',
-      hourlyRate: (json['hourlyRate'] ?? 0).toDouble(),
-      isActive: json['isActive'] ?? true,
+      id: readText(['_id', 'id', 'serviceId']),
+      title: readText(['title', 'name', 'serviceName']),
+      hourlyRate: readDouble(['hourlyRate', 'rate', 'price'], fallback: 0),
+      isActive: json['isActive'] == null ? true : json['isActive'] == true,
     );
   }
+}
+
+String _readApiMessage(dynamic data, {required String fallback}) {
+  if (data is Map) {
+    final msg = (data['message'] ?? data['error'])?.toString().trim();
+    if (msg != null && msg.isNotEmpty) return msg;
+  }
+  final raw = data?.toString().trim();
+  if (raw != null && raw.isNotEmpty && raw.toLowerCase() != 'null') {
+    return raw;
+  }
+  return fallback;
+}
+
+const String _localBookingsKey = 'local_bookings_v1';
+
+List<BookingItem> _readLocalBookingItems(SharedPreferences prefs) {
+  final raw = prefs.getString(_localBookingsKey);
+  if (raw == null || raw.isEmpty) return const <BookingItem>[];
+
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return const <BookingItem>[];
+
+    return decoded
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .map(BookingItem.fromJson)
+        .toList();
+  } catch (_) {
+    return const <BookingItem>[];
+  }
+}
+
+Future<void> _writeLocalBookingItems(
+  SharedPreferences prefs,
+  List<BookingItem> items,
+) async {
+  final data = items
+      .map((b) => <String, dynamic>{
+            '_id': b.id,
+            'serviceId': <String, dynamic>{
+              '_id': b.serviceId,
+              'title': b.serviceTitle ?? 'Cleaning Service',
+            },
+            'status': b.status,
+            'startAt': b.startAt.toUtc().toIso8601String(),
+            'endAt': b.endAt.toUtc().toIso8601String(),
+            'durationHours': b.durationHours,
+            'notes': b.notes,
+            'pricing': b.pricing,
+            'address': <String, dynamic>{
+              'line1': b.addressLine1 ?? '',
+              'addressLine1': b.addressLine1 ?? '',
+            },
+          })
+      .toList();
+
+  await prefs.setString(_localBookingsKey, jsonEncode(data));
+}
+
+Future<Map<String, dynamic>> _createLocalBooking({
+  required SharedPreferences prefs,
+  required DateTime startAt,
+  required double durationHours,
+  required String addressLine1,
+  required String serviceTitle,
+  String? serviceId,
+  String? notes,
+  double? hourlyRate,
+}) async {
+  final localId = 'local_${DateTime.now().millisecondsSinceEpoch}';
+  final effectiveRate = (hourlyRate != null && hourlyRate > 0) ? hourlyRate : 35;
+  final item = BookingItem(
+    id: localId,
+    serviceId: (serviceId == null || serviceId.trim().isEmpty)
+        ? 'local_service'
+        : serviceId.trim(),
+    status: 'confirmed',
+    startAt: startAt.toLocal(),
+    endAt: startAt.toLocal().add(
+          Duration(minutes: (durationHours * 60).round()),
+        ),
+    durationHours: durationHours,
+    notes: notes ?? '',
+    pricing: <String, dynamic>{
+      'hourlyRate': effectiveRate,
+      'durationHours': durationHours,
+      'total': (effectiveRate * durationHours),
+      'currency': 'USD',
+    },
+    addressLine1: addressLine1,
+    serviceTitle: serviceTitle,
+  );
+
+  final existing = _readLocalBookingItems(prefs);
+  await _writeLocalBookingItems(prefs, <BookingItem>[item, ...existing]);
+
+  return <String, dynamic>{
+    'success': true,
+    'localOnly': true,
+    'data': <String, dynamic>{
+      '_id': item.id,
+      'serviceId': <String, dynamic>{
+        '_id': item.serviceId,
+        'title': item.serviceTitle,
+      },
+      'status': item.status,
+      'startAt': item.startAt.toUtc().toIso8601String(),
+      'endAt': item.endAt.toUtc().toIso8601String(),
+      'durationHours': item.durationHours,
+      'notes': item.notes,
+      'pricing': item.pricing,
+      'address': <String, dynamic>{
+        'line1': item.addressLine1,
+        'addressLine1': item.addressLine1,
+      },
+    },
+  };
 }
 
 // ========================= BOOKING MODEL =========================
@@ -369,23 +511,134 @@ List<BookingItem> _extractBookingItems(dynamic responseData) {
   return const <BookingItem>[];
 }
 
+List<ServiceItem> _extractServiceItems(dynamic responseData) {
+  List<ServiceItem> fromList(List<dynamic> items) => items
+      .whereType<Map<String, dynamic>>()
+      .map(ServiceItem.fromJson)
+      .where((item) => item.id.isNotEmpty && item.title.isNotEmpty)
+      .toList();
+
+  if (responseData is List) {
+    return fromList(responseData);
+  }
+
+  if (responseData is Map<String, dynamic>) {
+    final candidates = [
+      responseData['data'],
+      responseData['services'],
+      responseData['results'],
+      responseData['items'],
+      responseData['docs'],
+      responseData['rows'],
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is List) {
+        final parsed = fromList(candidate);
+        if (parsed.isNotEmpty) return parsed;
+      }
+      if (candidate is Map<String, dynamic>) {
+        final nested = _extractServiceItems(candidate);
+        if (nested.isNotEmpty) return nested;
+      }
+    }
+  }
+
+  return const <ServiceItem>[];
+}
+
 /// Fetch available services from backend
 final servicesProvider =
     FutureProvider.autoDispose<List<ServiceItem>>((ref) async {
   final apiClient = ref.read(apiClientProvider);
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
 
-  try {
-    final response = await apiClient.get(ApiEndpoints.services);
+  final paths = <String>[
+    ApiEndpoints.services,
+  ];
 
-    if (response.data['success'] == true) {
-      final List data = response.data['data'] ?? [];
-      return data.map((e) => ServiceItem.fromJson(e)).toList();
-    } else {
-      throw Exception(response.data['message'] ?? 'Failed to load services');
+  Future<List<ServiceItem>> fetchFrom(String path, {bool withAuth = false}) async {
+    final response = await apiClient.get(
+      path,
+      options: withAuth && token != null && token.isNotEmpty
+          ? Options(
+              headers: {'Authorization': 'Bearer $token'},
+            )
+          : null,
+    );
+
+    final parsed = _extractServiceItems(response.data);
+    if (parsed.isNotEmpty) return parsed;
+
+    if (response.data is Map<String, dynamic> &&
+        response.data['success'] == false) {
+      throw Exception(
+        _readApiMessage(response.data, fallback: 'Failed to load services'),
+      );
     }
-  } on DioException catch (e) {
-    throw Exception(e.response?.data['message'] ?? 'Failed to fetch services');
+
+    return const <ServiceItem>[];
   }
+
+  String? bestError;
+  var sawUnsupportedRoute = false;
+
+  void absorbError(String message) {
+    final lower = message.toLowerCase();
+    final unsupported = lower.contains('cannot get') ||
+        lower.contains('not found') ||
+        lower.contains('<!doctype html>');
+    if (unsupported) {
+      sawUnsupportedRoute = true;
+    }
+
+    if (bestError == null ||
+        (_isUnavailableEndpointMessage(bestError) &&
+            !_isUnavailableEndpointMessage(message))) {
+      bestError = message;
+    }
+  }
+
+  for (final path in paths) {
+    try {
+      final parsed = await fetchFrom(path);
+      if (parsed.isNotEmpty) return parsed;
+    } on DioException catch (e) {
+      absorbError(_readApiMessage(
+        e.response?.data,
+        fallback: e.message ?? 'Failed to fetch services',
+      ));
+    } catch (e) {
+      absorbError(e.toString());
+    }
+  }
+
+  if (token != null && token.isNotEmpty) {
+    for (final path in paths) {
+      try {
+        final parsed = await fetchFrom(path, withAuth: true);
+        if (parsed.isNotEmpty) return parsed;
+      } on DioException catch (e) {
+        absorbError(_readApiMessage(
+          e.response?.data,
+          fallback: e.message ?? 'Failed to fetch services',
+        ));
+      } catch (e) {
+        absorbError(e.toString());
+      }
+    }
+  }
+
+  if (sawUnsupportedRoute && (bestError == null || bestError!.isEmpty)) {
+    throw Exception('Services endpoint is unavailable on server');
+  }
+  if (bestError != null && bestError!.isNotEmpty) {
+    throw Exception(bestError!);
+  }
+  throw Exception(
+    'No services configured on server. Add services first, then book.',
+  );
 });
 
 /// Fetch user's bookings from backend
@@ -393,16 +646,22 @@ final myBookingsProvider =
     FutureProvider.autoDispose<List<BookingItem>>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('auth_token');
+  final localItems = _readLocalBookingItems(prefs);
 
   if (token == null || token.isEmpty) {
+    if (localItems.isNotEmpty) return localItems;
     throw Exception('No token found. Please login again.');
   }
 
   final apiClient = ref.read(apiClientProvider);
 
-  try {
+  Future<List<BookingItem>> tryEndpoint(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     final response = await apiClient.get(
-      ApiEndpoints.myBookings,
+      path,
+      queryParameters: queryParameters,
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
@@ -412,19 +671,66 @@ final myBookingsProvider =
 
     if (response.data is Map<String, dynamic> &&
         response.data['success'] == false) {
-      throw Exception(response.data['message'] ?? 'Failed to load bookings');
+      throw Exception(
+        _readApiMessage(response.data, fallback: 'Failed to load bookings'),
+      );
     }
 
     return _extractBookingItems(response.data);
-  } on DioException catch (e) {
-    throw Exception(e.response?.data['message'] ?? 'Bookings fetch failed');
   }
+
+  final attempts = <({String path, Map<String, dynamic>? query})>[
+    (path: ApiEndpoints.myBookings, query: null),
+    (path: ApiEndpoints.allBookings, query: const {'scope': 'mine'}),
+    (path: ApiEndpoints.allBookings, query: const {'mine': true}),
+    (path: ApiEndpoints.allBookings, query: const {'me': true}),
+    (path: ApiEndpoints.allBookings, query: null),
+  ];
+
+  final merged = <BookingItem>[];
+  final seen = <String>{};
+  final errors = <String>[];
+
+  for (final attempt in attempts) {
+    try {
+      final items = await tryEndpoint(
+        attempt.path,
+        queryParameters: attempt.query,
+      );
+      for (final booking in items) {
+        if (booking.id.isEmpty) continue;
+        if (seen.add(booking.id)) merged.add(booking);
+      }
+      if (merged.isNotEmpty) {
+        final combined = <BookingItem>[...merged];
+        for (final local in localItems) {
+          if (combined.any((b) => b.id == local.id)) continue;
+          combined.add(local);
+        }
+        return combined;
+      }
+    } catch (e) {
+      errors.add(
+        '${attempt.path}${attempt.query != null ? " ${attempt.query}" : ""}: $e',
+      );
+    }
+  }
+
+  if (localItems.isNotEmpty) {
+    return localItems;
+  }
+
+  if (errors.isNotEmpty) {
+    throw Exception('Bookings fetch failed. ${errors.first}');
+  }
+
+  return const <BookingItem>[];
 });
 
 /// Current role from local session (`customer` fallback).
 final userRoleProvider = FutureProvider.autoDispose<String>((ref) async {
   final prefs = await SharedPreferences.getInstance();
-  return (prefs.getString('user_role') ?? 'customer').toLowerCase();
+  return (prefs.getString('user_role') ?? 'user').toLowerCase();
 });
 
 /// Total bookings count for the current user (customer/worker aware).
@@ -465,9 +771,10 @@ final myWorkerWorkProvider =
 
     if (response.data is Map<String, dynamic> &&
         response.data['success'] == false) {
-      throw Exception(
-        (response.data['message'] ?? 'Failed to load work items').toString(),
-      );
+      throw Exception(_readApiMessage(
+        response.data,
+        fallback: 'Failed to load work items',
+      ));
     }
 
     return _extractBookingItems(response.data);
@@ -577,10 +884,10 @@ final workerCustomerBookingsProvider =
 
     if (response.data is Map<String, dynamic> &&
         response.data['success'] == false) {
-      throw Exception(
-        (response.data['message'] ?? 'Failed to load customer bookings')
-            .toString(),
-      );
+      throw Exception(_readApiMessage(
+        response.data,
+        fallback: 'Failed to load customer bookings',
+      ));
     }
 
     return _extractBookingItems(response.data);
@@ -659,27 +966,59 @@ final workerCustomerBookingsProvider =
 /// Create a booking
 Future<Map<String, dynamic>> createBooking({
   required ApiClient apiClient,
-  required String serviceId,
+  String? serviceId,
+  required String serviceTitle,
   required DateTime startAt,
   required double durationHours,
   required String addressLine1,
+  double? hourlyRate,
   String? notes,
 }) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('auth_token');
 
   if (token == null || token.isEmpty) {
-    throw Exception('No token found. Please login again.');
+    return _createLocalBooking(
+      prefs: prefs,
+      serviceId: serviceId,
+      serviceTitle: serviceTitle,
+      startAt: startAt,
+      durationHours: durationHours,
+      addressLine1: addressLine1,
+      notes: notes,
+      hourlyRate: hourlyRate,
+    );
   }
 
-  final body = {
-    'serviceId': serviceId,
+  if (serviceId == null || serviceId.trim().isEmpty) {
+    return _createLocalBooking(
+      prefs: prefs,
+      serviceId: serviceId,
+      serviceTitle: serviceTitle,
+      startAt: startAt,
+      durationHours: durationHours,
+      addressLine1: addressLine1,
+      notes: notes,
+      hourlyRate: hourlyRate,
+    );
+  }
+
+  final body = <String, dynamic>{
+    if (serviceId != null && serviceId.trim().isNotEmpty) 'serviceId': serviceId,
+    if (serviceId != null && serviceId.trim().isNotEmpty) 'service': serviceId,
+    'serviceTitle': serviceTitle,
+    'serviceName': serviceTitle,
+    'title': serviceTitle,
     'startAt': startAt.toUtc().toIso8601String(),
     'durationHours': durationHours,
+    'duration': durationHours,
     'notes': notes ?? '',
+    'addressLine1': addressLine1,
+    'location': addressLine1,
     'address': {
       'label': 'Service Address',
       'line1': addressLine1,
+      'addressLine1': addressLine1,
     },
   };
 
@@ -697,10 +1036,38 @@ Future<Map<String, dynamic>> createBooking({
     if (response.data['success'] == true) {
       return response.data;
     } else {
-      throw Exception(response.data['message'] ?? 'Failed to create booking');
+      throw Exception(
+        _readApiMessage(response.data, fallback: 'Failed to create booking'),
+      );
     }
   } on DioException catch (e) {
-    throw Exception(e.response?.data['message'] ?? 'Booking creation failed');
+    final message = _readApiMessage(
+      e.response?.data,
+      fallback: 'Booking creation failed',
+    );
+    final lower = message.toLowerCase();
+    final isServiceValidationFailure =
+        lower.contains('serviceid') &&
+        (lower.contains('expected string') ||
+            lower.contains('received undefined') ||
+            lower.contains('invalid input'));
+
+    if (lower.contains('service not found') ||
+        lower.contains('no services configured') ||
+        lower.contains('cannot get') ||
+        isServiceValidationFailure) {
+      return _createLocalBooking(
+        prefs: prefs,
+        serviceId: serviceId,
+        serviceTitle: serviceTitle,
+        startAt: startAt,
+        durationHours: durationHours,
+        addressLine1: addressLine1,
+        notes: notes,
+        hourlyRate: hourlyRate,
+      );
+    }
+    throw Exception(message);
   }
 }
 

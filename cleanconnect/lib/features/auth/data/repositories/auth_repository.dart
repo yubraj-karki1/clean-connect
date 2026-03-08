@@ -14,26 +14,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Create provider
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
   final authDatasource = ref.read(authLocalDatasourceProvider);
-  final AuthRemoteDatasource = ref.read(authRemoteDatasourceProvider);
+  final authRemoteDatasource = ref.read(authRemoteDatasourceProvider);
   return AuthRepository(
-   authDatasource: authDatasource, 
-    authRemoteDataSource: AuthRemoteDatasource
-    );
+    authDatasource: authDatasource,
+    authRemoteDataSource: authRemoteDatasource,
+  );
 });
 
 class AuthRepository implements IAuthRepository {
   final IAuthLocalDataSource _authDataSource;
   final IAuthRemoteDataSource _authRemoteDataSource;
 
-
-  AuthRepository({ 
-
   AuthRepository({
     required IAuthLocalDataSource authDatasource,
     required IAuthRemoteDataSource authRemoteDataSource,
-    })
-    : _authDataSource = authDatasource,
-      _authRemoteDataSource = authRemoteDataSource;
+  })  : _authDataSource = authDatasource,
+        _authRemoteDataSource = authRemoteDataSource;
 
   @override
   Future<Either<Failure, bool>> register(AuthEntity user) async {

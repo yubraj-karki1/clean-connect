@@ -18,7 +18,7 @@ class _SplashScreen1State extends State<SplashScreen1> {
     Future.delayed(const Duration(seconds: 3)).then((_) async {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      final role = (prefs.getString('user_role') ?? 'customer').toLowerCase();
+      final role = (prefs.getString('user_role') ?? 'user').toLowerCase();
       if (token != null && token.isNotEmpty) {
         final page = role == 'worker'
             ? const WorkerDashboardPage()
