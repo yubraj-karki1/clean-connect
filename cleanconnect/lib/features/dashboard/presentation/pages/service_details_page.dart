@@ -1,4 +1,5 @@
 import 'package:cleanconnect/core/api/api_client.dart';
+import 'package:cleanconnect/core/utils/responsive_layout.dart';
 import 'package:cleanconnect/features/dashboard/presentation/pages/dashboard_screen.dart';
 import 'package:cleanconnect/features/dashboard/presentation/providers/booking_provider.dart';
 import 'package:flutter/material.dart';
@@ -94,7 +95,12 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: ResponsiveLayout.isTablet(context) ? 760 : double.infinity,
+            ),
+            child: Column(
           children: [
             // HEADER
             Container(
@@ -151,7 +157,10 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
 
             // FORM BODY
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: ResponsiveLayout.screenPadding(context).copyWith(
+                left: ResponsiveLayout.screenPadding(context).left + 4,
+                right: ResponsiveLayout.screenPadding(context).right + 4,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -362,6 +371,8 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
             ),
           ],
         ),
+          ),
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -422,6 +433,7 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
     }
 
     var selectedService = _matchedService;
+    String? serviceLoadError;
     if (selectedService == null) {
       try {
         final services = await ref.read(servicesProvider.future);
@@ -433,9 +445,18 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
           });
           selectedService = fallback;
         }
-      } catch (_) {
-        // Booking can still proceed with local fallback.
+      } catch (e) {
+        serviceLoadError = e.toString().replaceFirst('Exception: ', '');
       }
+    }
+
+    if (selectedService == null) {
+      _showError(
+        serviceLoadError?.isNotEmpty == true
+            ? serviceLoadError!
+            : 'Service not found. Please try again.',
+      );
+      return;
     }
 
     final shouldBook = await showDialog<bool>(
@@ -477,13 +498,16 @@ class _ServiceDetailsPageState extends ConsumerState<ServiceDetailsPage> {
       final apiClient = ref.read(apiClientProvider);
       await createBooking(
         apiClient: apiClient,
-        serviceId: selectedService?.id,
-        serviceTitle: selectedService?.title ?? widget.serviceTitle,
+        serviceId: selectedService.id,
+        serviceTitle: selectedService.title,
         startAt: startAt,
         durationHours: _getDurationHours().toDouble(),
         addressLine1: addressController.text.trim(),
         hourlyRate: _hourlyRate,
       );
+
+      ref.invalidate(myBookingsProvider);
+      ref.invalidate(totalBookingsCountProvider);
 
       if (!mounted) return;
       setState(() => _isLoading = false);

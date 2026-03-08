@@ -232,12 +232,13 @@ class _HomeState extends ConsumerState<Home> {
             const SizedBox(height: 10),
 
             // Featured Cleaners Horizontal List
-            SizedBox(
-              height: 310,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth >= 700;
+                final cardWidth =
+                    isWide ? (constraints.maxWidth - 40 - 32) / 3 : 200.0;
+
+                final cards = [
                   featuredCleanerCard(
                     "assets/images/sushim.jpg",
                     "Sushim Rupakheti",
@@ -245,6 +246,7 @@ class _HomeState extends ConsumerState<Home> {
                     127,
                     5,
                     35,
+                    cardWidth: cardWidth,
                   ),
                   featuredCleanerCard(
                     "assets/images/dipen.jpeg",
@@ -253,6 +255,7 @@ class _HomeState extends ConsumerState<Home> {
                     95,
                     4,
                     32,
+                    cardWidth: cardWidth,
                   ),
                   featuredCleanerCard(
                     "assets/images/joshep.jpeg",
@@ -261,9 +264,33 @@ class _HomeState extends ConsumerState<Home> {
                     203,
                     7,
                     35,
+                    cardWidth: cardWidth,
                   ),
-                ],
-              ),
+                ];
+
+                if (isWide) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        for (int i = 0; i < cards.length; i++) ...[
+                          Expanded(child: cards[i]),
+                          if (i != cards.length - 1) const SizedBox(width: 16),
+                        ],
+                      ],
+                    ),
+                  );
+                }
+
+                return SizedBox(
+                  height: 310,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    children: cards,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
           ],
@@ -326,12 +353,13 @@ class _HomeState extends ConsumerState<Home> {
     int reviews,
     int yearsExp,
     int pricePerHr,
+    {double cardWidth = 200}
   ) {
     final isFav = ref.watch(favouritesProvider).any((c) => c.name == name);
 
     return Container(
-      width: 200,
-      margin: const EdgeInsets.only(right: 16),
+      width: cardWidth,
+      margin: EdgeInsets.only(right: cardWidth <= 210 ? 16 : 0),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
@@ -356,12 +384,12 @@ class _HomeState extends ConsumerState<Home> {
                 ),
                 child: Image.asset(img,
                     height: 130,
-                    width: 200,
+                    width: double.infinity,
                     fit: BoxFit.cover, errorBuilder: (_, __, ___) {
                   return Image.asset(
                     "assets/images/sushim.jpg",
                     height: 130,
-                    width: 200,
+                    width: double.infinity,
                     fit: BoxFit.cover,
                   );
                 }),
@@ -425,6 +453,8 @@ class _HomeState extends ConsumerState<Home> {
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Row(

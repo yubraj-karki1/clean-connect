@@ -1,4 +1,5 @@
 import 'package:cleanconnect/core/utils/snackbar_utils.dart';
+import 'package:cleanconnect/core/utils/responsive_layout.dart';
 import 'package:cleanconnect/features/auth/presentation/state/auth_state.dart';
 import 'package:cleanconnect/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:flutter/material.dart';
@@ -84,10 +85,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveLayout.maxFormWidth(context),
+              ),
+              child: Padding(
+                padding: ResponsiveLayout.screenPadding(context).copyWith(
+                  left: ResponsiveLayout.screenPadding(context).left + 8,
+                  right: ResponsiveLayout.screenPadding(context).right + 8,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
@@ -275,9 +285,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 const SizedBox(height: 10),
                 // Sign Up Button
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 85),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: SizedBox(
-                    width: 200,
+                    width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       onPressed: authState.status == AuthStatus.loading 
@@ -319,6 +329,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+              ),
             ),
           ),
         ),

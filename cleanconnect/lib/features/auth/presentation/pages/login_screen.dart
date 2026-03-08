@@ -1,5 +1,6 @@
 import 'package:cleanconnect/app/routes/app_routes.dart';
 import 'package:cleanconnect/core/providers/biometric_provider.dart';
+import 'package:cleanconnect/core/utils/responsive_layout.dart';
 import 'package:cleanconnect/core/utils/snackbar_utils.dart';
 import 'package:cleanconnect/features/auth/presentation/pages/signup_screen.dart';
 import 'package:cleanconnect/features/auth/presentation/state/auth_state.dart';
@@ -167,18 +168,26 @@ Widget build(BuildContext context) {
     }
   });
 
+    final isTablet = ResponsiveLayout.isTablet(context);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
-          child: Column(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveLayout.maxFormWidth(context),
+              ),
+              child: Padding(
+                padding: ResponsiveLayout.screenPadding(context),
+                child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 150),
+              SizedBox(height: isTablet ? 90 : 120),
 
               Image.asset(
                 "assets/images/image1.jpg",
-                height: 200,
+                height: isTablet ? 170 : 200,
               ),
 
               const SizedBox(height: 30),
@@ -186,7 +195,7 @@ Widget build(BuildContext context) {
               const Text(
                 'Login',
                 style: TextStyle(
-                  fontSize: 45,
+                  fontSize: 42,
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                 ),
@@ -283,7 +292,7 @@ Widget build(BuildContext context) {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: SizedBox(
-                  width: 200,
+                  width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: authState.status == AuthStatus.loading
@@ -308,7 +317,7 @@ Widget build(BuildContext context) {
                           )
                         : const Text(
                             "Login",
-                            style: TextStyle(fontSize: 26, color: Colors.white),
+                            style: TextStyle(fontSize: 22, color: Colors.white),
                           ),
                   ),
                 ),
@@ -318,7 +327,7 @@ Widget build(BuildContext context) {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: SizedBox(
-                    width: 260,
+                    width: double.infinity,
                     height: 50,
                     child: OutlinedButton.icon(
                       onPressed: _biometricBusy ? null : _handleBiometricLogin,
@@ -375,6 +384,9 @@ Widget build(BuildContext context) {
                 ],
               ),
             ],
+          ),
+              ),
+            ),
           ),
         ),
       );
