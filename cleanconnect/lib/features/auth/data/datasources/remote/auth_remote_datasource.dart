@@ -25,8 +25,10 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
         _userSessionService = userSessionService;
 
   @override
-  Future<AuthApiModel> getUserById(String user) {
-    throw UnimplementedError();
+  Future<AuthApiModel> getUserById(String user) async {
+    final response = await _apiClient.get('/users/$user');
+    final userData = _extractUserData(response.data);
+    return AuthApiModel.fromJson(userData);
   }
 
   @override
@@ -50,7 +52,6 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
         var userData = _extractUserData(response.data);
         var user = AuthApiModel.fromJson(userData);
 
-        // If login response omits full user object, recover from profile endpoint.
         if ((user.id == null || user.id!.trim().isEmpty) ||
             user.fullName.trim().isEmpty ||
             user.email.trim().isEmpty) {
@@ -61,7 +62,9 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
               userData = profileData;
               user = AuthApiModel.fromJson(userData);
             }
-          } catch (_) {}
+          } catch (_) {
+            // Fallback to login payload.
+          }
         }
 
         await _persistSession(user: user, fallbackEmail: email);

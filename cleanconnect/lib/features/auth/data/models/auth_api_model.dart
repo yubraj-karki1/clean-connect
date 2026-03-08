@@ -7,7 +7,7 @@ class AuthApiModel {
   final String? role;
   final String? phoneNumber;
   final String address;
-  final String?password;
+  final String? password;
   final String? profilePicture;
   final String? confirmPassword;
 
@@ -19,64 +19,61 @@ class AuthApiModel {
     this.password,
     required this.address,
     this.phoneNumber,
-    required this.profilePicture,
-    this.confirmPassword
+    this.profilePicture,
+    this.confirmPassword,
   });
 
-  //toJSON
-  Map<String, dynamic> toJson(){
-    return{
-
-      "fullName" : fullName,
-      "email" : email,
-      "role" : role,
-      "userType" : role,
-      "phoneNumber" : phoneNumber,
-      "address" : address,
-      "password" : password,
-      "profilePicture": profilePicture,
-      "confirmPassword":confirmPassword
+  Map<String, dynamic> toJson() {
+    return {
+      'fullName': fullName,
+      'email': email,
+      'role': role,
+      'userType': role,
+      'phoneNumber': phoneNumber,
+      'address': address,
+      'password': password,
+      'profilePicture': profilePicture,
+      'confirmPassword': confirmPassword,
     };
   }
 
-  //from JSON 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
-  String? asText(dynamic value) {
-    if (value == null) return null;
-    final text = value.toString().trim();
-    if (text.isEmpty || text.toLowerCase() == 'null') return null;
-    return text;
+    String? asText(dynamic value) {
+      if (value == null) return null;
+      final text = value.toString().trim();
+      if (text.isEmpty || text.toLowerCase() == 'null') return null;
+      return text;
+    }
+
+    return AuthApiModel(
+      id: asText(json['_id']) ?? asText(json['id']) ?? '',
+      fullName: asText(json['fullName']) ??
+          asText(json['name']) ??
+          asText(json['username']) ??
+          '',
+      email: asText(json['email']) ?? '',
+      role: asText(json['role']) ??
+          asText(json['userType']) ??
+          asText(json['accountType']),
+      address: asText(json['address']) ??
+          asText(json['addressLine1']) ??
+          asText(json['location']) ??
+          '',
+      phoneNumber: asText(json['phoneNumber']) ??
+          asText(json['phone']) ??
+          asText(json['mobile']) ??
+          asText(json['contactNumber']) ??
+          '',
+      password: asText(json['password']) ?? '',
+      profilePicture: asText(json['profilePicture']) ??
+          asText(json['profileImage']) ??
+          asText(json['avatar']) ??
+          '',
+      confirmPassword: asText(json['confirmPassword']),
+    );
   }
 
-  return AuthApiModel(
-    id: asText(json['_id']) ?? asText(json['id']) ?? '',
-    fullName: asText(json['fullName']) ??
-        asText(json['name']) ??
-        asText(json['username']) ??
-        '',
-    email: asText(json['email']) ?? '',
-    role: asText(json['role']) ??
-        asText(json['userType']) ??
-        asText(json['accountType']),
-    address: asText(json['address']) ??
-        asText(json['addressLine1']) ??
-        asText(json['location']) ??
-        '',
-    phoneNumber: asText(json['phoneNumber']) ??
-        asText(json['phone']) ??
-        asText(json['mobile']) ??
-        asText(json['contactNumber']) ??
-        '',
-    password: asText(json['password']) ?? '',
-    profilePicture: asText(json['profilePicture']) ??
-        asText(json['profileImage']) ??
-        asText(json['avatar']) ??
-        '',
-  );
-}
-
-  // toEntity
-  AuthEntity toEntity(){
+  AuthEntity toEntity() {
     return AuthEntity(
       authId: id,
       fullName: fullName,
@@ -85,13 +82,13 @@ class AuthApiModel {
       phoneNumber: phoneNumber,
       address: address,
       profilePicture: profilePicture,
-      confirmPassword: confirmPassword
+      confirmPassword: confirmPassword,
     );
   }
-  
-  // fromEntity
-  factory AuthApiModel.fromEntity(AuthEntity entity){
+
+  factory AuthApiModel.fromEntity(AuthEntity entity) {
     return AuthApiModel(
+      id: entity.authId,
       fullName: entity.fullName,
       email: entity.email,
       role: entity.role,
@@ -99,9 +96,7 @@ class AuthApiModel {
       address: entity.address,
       password: entity.password,
       profilePicture: entity.profilePicture,
-      confirmPassword: entity.confirmPassword
+      confirmPassword: entity.confirmPassword,
     );
   }
-
-
 }

@@ -12,16 +12,10 @@ class ApiEndpoints {
   static const int _fallbackPort = 5050;
   static const String _apiPrefix =
       String.fromEnvironment('API_PREFIX', defaultValue: 'api');
-  static const bool _preferUsbReverse =
-      bool.fromEnvironment('API_USE_USB_REVERSE', defaultValue: false);
 
-  // Your PC LAN IP (used on physical device). Override with:
-  // flutter run --dart-define=API_LAN_HOST=192.168.xx.xx
   static const String _lanHost =
       String.fromEnvironment('API_LAN_HOST', defaultValue: '192.168.1.80');
 
-  // Full override (highest priority):
-  // flutter run --dart-define=API_BASE_URL=http://192.168.31.161:5000/api
   static const String _baseUrlOverride =
       String.fromEnvironment('API_BASE_URL', defaultValue: '');
 
@@ -34,7 +28,6 @@ class ApiEndpoints {
   static bool get initialized => _initialized;
 
   static String _startupBaseUrl() {
-    // Safe fallback before init() runs.
     if (kIsWeb) return 'http://$_lanHost:$_port/api';
     if (Platform.isAndroid) return 'http://10.0.2.2:$_port/api';
     if (Platform.isIOS) return 'http://localhost:$_port/api';
@@ -56,7 +49,6 @@ class ApiEndpoints {
       final android = await deviceInfo.androidInfo;
       isPhysicalDevice = android.isPhysicalDevice;
       if (isPhysicalDevice) {
-        // Force LAN URL on physical Android to avoid wrong auto-probe routes.
         baseUrl = 'http://$_lanHost:$_port/$_apiPrefix';
       } else {
         final port = await _resolvePort('10.0.2.2');
@@ -81,7 +73,6 @@ class ApiEndpoints {
       return;
     }
 
-    // Desktop/web fallback
     baseUrl = kIsWeb
         ? 'http://$_lanHost:$_port/$_apiPrefix'
         : 'http://localhost:$_port/$_apiPrefix';
@@ -112,7 +103,6 @@ class ApiEndpoints {
       }
     }
 
-    // Safe fallback when probing fails.
     if (includeUsbLoopback) {
       return 'http://127.0.0.1:$_port/$_apiPrefix';
     }
@@ -184,7 +174,6 @@ class ApiEndpoints {
             const Duration(milliseconds: 1800),
           );
 
-      // If server responds at all, host:port route is reachable.
       return res.statusCode > 0;
     } catch (_) {
       return false;
@@ -193,16 +182,13 @@ class ApiEndpoints {
     }
   }
 
-  // ========================= Auth Endpoints =========================
   static const String login = '/auth/login';
   static const String signup = '/auth/register';
 
-  // ========================= PHOTO (IMAGE) ENDPOINTS =========================
   static const String uploadPhoto = '/media/photo/upload';
   static const String uploadPhotos = '/media/photos/upload';
   static const String getPhoto = '/media/photo';
 
-  // ========================= BOOKING ENDPOINTS =========================
   static const String services = '/bookings/services';
   static const String createBooking = '/bookings';
   static const String allBookings = '/bookings';
@@ -224,9 +210,7 @@ class ApiEndpoints {
   static String markBookingComplete(String id) => '/bookings/$id/mark-complete';
   static String finishBooking(String id) => '/bookings/$id/finish';
 
-  // ========================= PHOTO URL HELPER =========================
   static String photoUrl(String fileName) {
     return '$baseUrl$getPhoto/$fileName';
   }
 }
-

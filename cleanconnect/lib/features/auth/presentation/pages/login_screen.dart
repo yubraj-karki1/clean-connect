@@ -157,6 +157,7 @@ Widget build(BuildContext context) {
       } else {
         AppRoutes.pushReplacement(context, const CustomerDashboardPage());
       }
+      AppRoutes.pushReplacement(context, const DashboardScreen());
     } 
       else if (next.status == AuthStatus.error && next.errorMessage != null) {
       SnackbarUtils.showError(

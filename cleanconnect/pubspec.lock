@@ -321,6 +321,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.9.0"
+  dio_log:
+    dependency: "direct main"
+    description:
+      name: dio_log
+      sha256: "3cac6b98f70622e4cac2cf83a2d3198472ada56caa8fd3599ff33ef8dab5aaa5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.3.0+3"
   dio_smart_retry:
     dependency: "direct main"
     description:

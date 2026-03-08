@@ -59,7 +59,7 @@ class AuthHiveModel extends HiveObject {
     );
   }
 
-  // From Entity
+  // ============From Entity=================//
   factory AuthHiveModel.fromEntity(AuthEntity entity) {
     return AuthHiveModel(
       authId: entity.authId,

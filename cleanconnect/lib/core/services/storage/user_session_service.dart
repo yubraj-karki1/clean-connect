@@ -60,9 +60,6 @@ class UserSessionService {
       await _prefs.setString(_keyUserProfilePicture, profilePicture);
     }
   }
-
-  
-
   // Check if user is logged in
   bool isLoggedIn() {
     return _prefs.getBool(_keyIsLoggedIn) ?? false;
@@ -82,13 +79,10 @@ class UserSessionService {
   String? getCurrentUserFullName() {
     return _prefs.getString(_keyUserFullName);
   }
-
   // Get current user role
   String? getCurrentUserRole() {
     return _prefs.getString(_keyUserRole);
   }
-
-
   // Get current user address
   String? getCurrentUserAddress() {
     return _prefs.getString(_keyUserAddress);

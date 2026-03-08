@@ -1,3 +1,4 @@
+
 import 'package:cleanconnect/app/app.dart';
 import 'package:cleanconnect/core/services/hive/hive_service.dart';
 import 'package:cleanconnect/core/api/api_endpoints.dart';
@@ -20,6 +21,8 @@ void main() async {
         sharedPreferencesProvider.overrideWithValue(sharedPrefs),
       ],
       child: const App(), 
+      child: const App(), // ✅ use App, not MyApp
+
     ),
   );
 }
