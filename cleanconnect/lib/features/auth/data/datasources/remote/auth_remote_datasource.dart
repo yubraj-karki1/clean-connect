@@ -5,28 +5,16 @@ import 'package:cleanconnect/features/auth/data/datasources/auth_datasouce.dart'
 import 'package:cleanconnect/features/auth/data/models/auth_api_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// ========create a provider=============
 import 'package:shared_preferences/shared_preferences.dart';
+
 final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref) {
   return AuthRemoteDatasource(
     apiClient: ref.read(apiClientProvider),
     userSessionService: ref.read(userSessionServiceProvider),
   );
 });
-<<<<<<< HEAD
 
 
-=======
-class AuthRemoteDatasource implements IAuthRemoteDataSource {
-// create a provider
-final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref){
-  return AuthRemoteDatasource(
-    apiClient : ref.read(apiClientProvider),
-    userSessionService : ref.read(userSessionServiceProvider),
-    
-  );
-});
->>>>>>> fcf4eecfd9a7f461edb3777c2b15d12d04403ce0
 class AuthRemoteDatasource implements IAuthRemoteDataSource{
   final ApiClient _apiClient;
   final UserSessionService _userSessionService;
@@ -83,33 +71,6 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource{
         return user;
       }
 
-<<<<<<< HEAD
-=======
-      // 'data' IS the user object directly (not data.user)
-      final userData = response.data['data'] as Map<String, dynamic>?
-          ?? <String, dynamic>{};
-      final user = AuthApiModel.fromJson(userData);
-
-      await _userSessionService.saveUserSession(
-        userId: user.id ?? "",
-        email: email,
-        fullName: user.fullName,
-        role: user.role,
-        address: user.address,
-
-      final data = response.data['data'] as Map<String, dynamic>;
-      
-      final user = AuthApiModel.fromJson(data);
-
-      await _userSessionService.saveUserSession(
-        userId: user.id ?? "", 
-        email: email,
-        fullName: user.fullName ?? "User",
-        address: user.address ?? "", 
-      );
-      return user;
-    } else {
->>>>>>> fcf4eecfd9a7f461edb3777c2b15d12d04403ce0
       throw DioException(
         requestOptions: response.requestOptions,
         response: response,
@@ -150,7 +111,6 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource{
     } catch (e) {
       rethrow;
     }
-<<<<<<< HEAD
   }
 
   String? _extractToken(dynamic body) {
@@ -218,22 +178,5 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource{
       phoneNumber: user.phoneNumber,
       profilePicture: user.profilePicture,
     );
-=======
-  } catch (e) {
-    rethrow;
   }
 }
-}
-    if(response.data['success'] == true){
-      final data = response.data['data'] as Map<String, dynamic>;
-      final registerUser = AuthApiModel.fromJson(data);
-      return registerUser;
-    }
-    return user;  
-  }
-}
-    return user;
->>>>>>> fcf4eecfd9a7f461edb3777c2b15d12d04403ce0
-  }
-}
-
